@@ -1,0 +1,58 @@
+
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h2>Form Parser V1.0</h2>
+<p style="margin-bottom: 100px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <!-- Upload PDF -->
+    <div class="form-group">
+        <label for="pdf">Choose PDF:</label>
+        <input type="file" class="form-control-file" id="pdf" name="pdf" accept=".pdf">
+    </div>
+
+    <!-- Page Numbers -->
+    <div class="form-group">
+        <label for="pages">Page Numbers (e.g., 1,2,3-5):</label>
+        <input type="text" class="form-control" id="pages" name="pages" placeholder="Enter page numbers">
+    </div>
+
+    <!-- All Pages Checkbox -->
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="allPages" name="all_pages">
+        <label class="form-check-label" for="allPages">
+            Process all pages
+        </label>
+    </div>
+
+    <!-- Response Format -->
+    <div class="form-group mt-3">
+        <label for="format">Response Format:</label>
+        <select class="form-control" id="format" name="response_format">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+        </select>
+    </div>
+
+    <!-- Execute Button -->
+    <button type="submit" class="btn btn-primary mt-3">Execute</button>
+</form>
+
+<hr>
+
+<!-- Status Bar Confirmation -->
+<div class="mt-5">
+    <h4>Processing Status:</h4>
+    <p>Pages Processed: <span id="pagesProcessed">0</span></p>
+    <p>F1 Score: <span id="f1Score">0</span></p>
+    <!-- Add more metrics as needed -->
+</div>
+
+<!-- Download File Button -->
+<div class="mt-3">
+    <a href="/download/filename_here" class="btn btn-success">Download Processed File</a>
+</div>
+
+{% endblock %}
