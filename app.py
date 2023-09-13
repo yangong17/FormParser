@@ -4,7 +4,7 @@ from flask import Flask, flash, redirect, render_template, request, session, sen
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
-from helpers import allowed_file
+from helpers import allowed_file, process_with_textract, convert_to_csv
 
 app = Flask(__name__)
 
@@ -21,29 +21,51 @@ Session(app)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Handle file upload and form data
+        file = request.files.get('pdf')
 
-        # Check if the post request has the file part
-        if 'pdf' not in request.files:
-            flash('No file part')
+        # Check if the file is present in the request and has a valid filename
+        if not file or file.filename == '' or not allowed_file(file.filename):
+            flash('Invalid or no file uploaded.')
             return redirect(request.url)
-        
-        file = request.files['pdf']
-        
-        # If the user does not select a file, the browser submits an empty file
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
-        
-        # Save the file (and process it or save form details to a database if needed)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            
-            # Save other form details (page numbers, all_pages, response format) to the database or process them as needed
 
-            flash('File successfully uploaded and details saved')
-            return redirect(url_for('index'))
+        # Save the file
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        # Store the filename in the session for further use
+        session['filename'] = filename
+
+        flash('File successfully uploaded.')
+        return redirect(url_for('index'))
 
     return render_template("index.html")
 
+
+
+@app.route("/execute", methods=["POST"])
+def execute():
+    # Assuming you've stored the filename in the session or elsewhere
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], session.get('filename'))
+    
+    # Process with Textract
+    extracted_data = process_with_textract(file_path)
+    
+    # Convert the extracted_data to CSV (you can use Python's csv library)
+    csv_output = convert_to_csv(extracted_data)
+    
+    # Save the CSV to a file or store it somewhere
+    csv_filename = "output.csv"
+    with open(os.path.join(app.config['UPLOAD_FOLDER'], csv_filename), 'w') as csv_file:
+        csv_file.write(csv_output)
+
+    # Return some status info (like number of pages processed, F1 score, etc.)
+    return {
+        "status": "success",
+        "pages_processed": len(extracted_data),  # This is just a placeholder. Adjust based on your needs.
+        "f1_score": "0.95",  # This is also a placeholder. Adjust based on your real calculations.
+        "csv_filename": csv_filename
+    }
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)

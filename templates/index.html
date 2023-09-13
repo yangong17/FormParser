@@ -6,7 +6,7 @@
 <h2>Form Parser V1.0</h2>
 <p style="margin-bottom: 100px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
 
-<form action="/upload" method="post" enctype="multipart/form-data">
+<form action="/execute" method="post" enctype="multipart/form-data">
     <!-- Upload PDF -->
     <div class="form-group">
         <label for="pdf">Upload PDF:</label>
@@ -55,10 +55,42 @@
     </div>
 
     <!-- Execute Button -->
-    <button type="submit" class="btn btn-primary mt-3">Execute</button>
+    <button id="executeBtn" type="submit" class="btn btn-primary mt-3">Execute</button>
 </form>
-
 <hr>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function(){
+    $("#executeBtn").click(function(e){
+        e.preventDefault();  // Prevent the form from submitting the traditional way
+
+        // Create a FormData object to hold the file and other form data
+        var formData = new FormData($('form')[0]);
+
+        // Send the POST request with the form data
+        $.ajax({
+            url: '/execute',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if(data.status === "success"){
+                    $("#pagesProcessed").text(data.pages_processed);
+                    $("#f1Score").text(data.f1_score);
+                    // Update the download link
+                    $("a[href='/download/filename_here']").attr("href", "/download/" + data.csv_filename);
+                } else {
+                    alert("Error processing the file.");
+                }
+            }
+        });
+    });
+});
+
+</script>
+
 
 <!-- Status Bar Confirmation -->
 <div class="mt-5">
