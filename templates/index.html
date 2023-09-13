@@ -9,7 +9,7 @@
 <form action="/upload" method="post" enctype="multipart/form-data">
     <!-- Upload PDF -->
     <div class="form-group">
-        <label for="pdf">Choose PDF:</label>
+        <label for="pdf">Upload PDF:</label>
         <input type="file" class="form-control-file" id="pdf" name="pdf" accept=".pdf">
     </div>
 
@@ -27,12 +27,30 @@
         </label>
     </div>
 
+    <script>
+        // Checks if "Process all pages" is checked
+        // Get references to the checkbox and the input
+        const allPagesCheckbox = document.getElementById('allPages');
+        const pagesInput = document.getElementById('pages');
+    
+        // Add event listener for changes on the checkbox
+        allPagesCheckbox.addEventListener('change', function() {
+            if (allPagesCheckbox.checked) {
+                // If checked, disable the input
+                pagesInput.disabled = true;
+            } else {
+                // If unchecked, enable the input
+                pagesInput.disabled = false;
+            }
+        });
+    </script>
+    
     <!-- Response Format -->
     <div class="form-group mt-3">
         <label for="format">Response Format:</label>
         <select class="form-control" id="format" name="response_format">
-            <option value="json">JSON</option>
             <option value="csv">CSV</option>
+            <option value="json">JSON</option>
         </select>
     </div>
 
