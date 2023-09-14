@@ -6,103 +6,47 @@
 <h2>Form Parser V1.0</h2>
 <p style="margin-bottom: 100px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
 
-<form action="/execute" method="post" enctype="multipart/form-data">
+<form action="/upload" method="post" enctype="multipart/form-data">
     <!-- Upload PDF -->
     <div class="form-group">
         <label for="pdf">Upload PDF:</label>
-        <input type="file" class="form-control-file" id="pdf" name="pdf" accept=".pdf">
+        <input type="file" class="form-control-file" id="pdf" name="file" accept=".pdf">
     </div>
 
-    <!-- Page Numbers -->
-    <div class="form-group">
-        <label for="pages">Page Numbers (e.g., 1,2,3-5):</label>
-        <input type="text" class="form-control" id="pages" name="pages" placeholder="Enter page numbers">
-    </div>
+    <!-- Submit Button for Upload -->
+    <input type="submit" name="upload" value="Upload" class="btn btn-success">
 
-    <!-- All Pages Checkbox -->
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="allPages" name="all_pages">
-        <label class="form-check-label" for="allPages">
-            Process all pages
-        </label>
-    </div>
-
-    <script>
-        // Checks if "Process all pages" is checked
-        // Get references to the checkbox and the input
-        const allPagesCheckbox = document.getElementById('allPages');
-        const pagesInput = document.getElementById('pages');
-    
-        // Add event listener for changes on the checkbox
-        allPagesCheckbox.addEventListener('change', function() {
-            if (allPagesCheckbox.checked) {
-                // If checked, disable the input
-                pagesInput.disabled = true;
-            } else {
-                // If unchecked, enable the input
-                pagesInput.disabled = false;
-            }
-        });
-    </script>
-    
-    <!-- Response Format -->
-    <div class="form-group mt-3">
-        <label for="format">Response Format:</label>
-        <select class="form-control" id="format" name="response_format">
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-        </select>
-    </div>
-
-    <!-- Execute Button -->
-    <button id="executeBtn" type="submit" class="btn btn-primary mt-3">Execute</button>
+    <!-- Button for Extract Key-Value Pairs -->
+    <button type="submit" formaction="/execute" class="btn btn-secondary mt-3">Extract Key-Value Pairs</button>
 </form>
-<hr>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Confirmation Message -->
+{% if msg %}
+<p class="alert alert-success mt-3">{{ msg }}</p>
 <script>
-$(document).ready(function(){
-    $("#executeBtn").click(function(e){
-        e.preventDefault();  // Prevent the form from submitting the traditional way
-
-        // Create a FormData object to hold the file and other form data
-        var formData = new FormData($('form')[0]);
-
-        // Send the POST request with the form data
-        $.ajax({
-            url: '/execute',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(data) {
-                if(data.status === "success"){
-                    $("#pagesProcessed").text(data.pages_processed);
-                    $("#f1Score").text(data.f1_score);
-                    // Update the download link
-                    $("a[href='/download/filename_here']").attr("href", "/download/" + data.csv_filename);
-                } else {
-                    alert("Error processing the file.");
-                }
-            }
-        });
-    });
-});
-
+    $("#pdf").attr("disabled", "disabled");  // Disable the file input
+    $("input[type='submit']").attr("disabled", "disabled");  // Disable the upload button
 </script>
+{% endif %}
 
-
-<!-- Status Bar Confirmation -->
-<div class="mt-5">
-    <h4>Processing Status:</h4>
-    <p>Pages Processed: <span id="pagesProcessed">0</span></p>
-    <p>F1 Score: <span id="f1Score">0</span></p>
-    <!-- Add more metrics as needed -->
-</div>
 
 <!-- Download File Button -->
 <div class="mt-3">
     <a href="/download/filename_here" class="btn btn-success">Download Processed File</a>
 </div>
+
+<div class="mt-5">
+    <h4>Extracted Data:</h4>
+    <ul>
+    {% if extracted_data %}
+        {% for key, value in extracted_data.items() %}
+            <li>{{ key }}: {{ value }}</li>
+        {% endfor %}
+    {% else %}
+        <li>No data extracted yet.</li>
+    {% endif %}
+    </ul>
+</div>
+
 
 {% endblock %}
