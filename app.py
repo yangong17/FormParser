@@ -60,10 +60,6 @@ def upload():
                 Filename=full_path,  # Use the full path here
                 Key=s3_filename
             )
-            
-            # Optional: remove the local file after upload
-            os.remove(full_path)
-            
             msg = "File Successfully Uploaded"
             return render_template("index.html", msg=msg)
         else:
@@ -109,7 +105,8 @@ def execute():
             text.append(f.key)
             text.append(f.value)
 
-    return render_template("index.html", text=text)
+        return render_template("index.html", text=text)
+
     
     #doc = Document(response)
     #text = []
