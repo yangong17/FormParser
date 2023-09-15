@@ -7,14 +7,58 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <h2>Form Parser V1.0</h2>
-<p style="margin-bottom: 100px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
+<p style="margin-top: 20px; margin-bottom: 50px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
 
-
-<form action="/upload" method="post" enctype="multipart/form-data">
     
+
+<form action="/jobinformation" style="margin-top: 40px; margin-bottom: 40px;" method="post">
+    <h4>1. Input Job Information</h4>
+    <p>Enter details of job to compare applications to:</p>
+
+
+    <div>
+        <label for="jobTitle">Job Title:</label>
+        <input type="text" id="jobTitle" name="jobTitle" required>
+    </div>
+
+    <div>
+        <label for="yearsOfExperience">Years of Experience:</label>
+        <input type="number" id="yearsOfExperience" name="yearsOfExperience" required>
+    </div>
+
+    <div>
+        <label for="jobLocation">Job Address:</label>
+        <input type="text" id="jobLocation" name="jobLocation" style="width: 50%;" required>
+    </div>
+
+    <div>
+        <label for="salary">Annual Salary:</label>
+        <input type="number" id="salary" name="salary" required>
+    </div>
+
+    <div>
+        <label for="keyWords">Job Duties and Responsibilties:</label><br>
+        <textarea id="keyWords" name="keyWords" rows="4" cols="50" required></textarea>
+    </div>
+
+    <div>
+        <input type="submit" value="Submit">
+    </div>
+</form>
+
+<!-- Confirmation Message -->
+{% if infomsg %}
+<p class="alert alert-success mt-3">{{ infomsg }}</p>
+{% endif %}
+
+
+<form action="/upload" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
+    
+    <h4>2. Upload Job Applications</h4>
+
+
     <!-- Upload PDF -->
     <div class="form-group">
-        <label for="pdf">Upload PDF:</label>
         <input type="file" class="form-control-file" id="pdf" name="file" accept=".pdf">
     </div>
 
@@ -24,8 +68,8 @@
 </form>
 
 <!-- Confirmation Message -->
-{% if msg %}
-<p class="alert alert-success mt-3">{{ msg }}</p>
+{% if uploadmsg %}
+<p class="alert alert-success mt-3">{{ uploadmsg }}</p>
 <script>
     $("#pdf").attr("disabled", "disabled");  // Disable the file input
     $("input[type='submit']").attr("disabled", "disabled");  // Disable the upload button
@@ -33,15 +77,17 @@
 {% endif %}
 
 
-<form action="/execute" method="post" enctype="multipart/form-data">
+<form action="/execute" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
    
-    <!-- Button for Extract Key-Value Pairs -->
-    <button id="executeBtn" class="btn btn-secondary mt-3">Extract Key-Value Pairs</button>
+    <h4>Find Best Matches</h4>
+
+    <!-- Button to run Analysis -->
+    <button id="executeBtn" class="btn btn-secondary mt-3">Analyze</button>
 
 </form>
 
 <!-- Placeholder for the extracted data table -->
-<div id="dataTableContainer">
+<div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
     <h4>Extracted Data:</h4>
     <table class="table table-bordered" id="extractedDataTable">
         <thead>
@@ -55,24 +101,6 @@
     </table>
 </div>
 
-<script>
-    $(document).ready(function(){
-        var text = {{ text|tojson|safe }};  // Assuming you're passing 'text' from Flask to the template
-
-        // Ensure that text has an even length (pairs of keys and values)
-        if (text.length % 2 === 0) {
-            for (let i = 0; i < text.length; i += 2) {
-                let key = text[i];
-                let value = text[i+1];
-
-                // Append the key-value pair to the table
-                $('#extractedDataTable tbody').append('<tr><td>' + key + '</td><td>' + value + '</td></tr>');
-            }
-        } else {
-            console.error("The 'text' list doesn't have an even number of elements.");
-        }
-    });
-</script>
 
 <!-- Download File Button -->
 <div class="mt-3">
