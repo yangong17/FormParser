@@ -32,6 +32,7 @@ def clean_text(text):
 # -------
 
 def setup_database(keys_to_extract):
+    conn = None
     try:
         conn = sqlite3.connect('applications.db')
         cursor = conn.cursor()
@@ -46,31 +47,45 @@ def setup_database(keys_to_extract):
             {columns}
         )
         '''
-        
         cursor.execute(sql)
         conn.commit()
-        conn.close()
     except sqlite3.Error as e:
         print(f"Error occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 # -------
 
 def insert_data_into_db(data):
-    conn = sqlite3.connect('applications.db')
-    cursor = conn.cursor()
+    if not data:
+        print("Error: No data provided for insertion.")
+        return
 
-    # Convert keys to valid named placeholders
-    formatted_keys = [key.replace(" ", "_").lower() for key in data.keys()]
+    conn = None
+    try:
+        conn = sqlite3.connect('applications.db')
+        cursor = conn.cursor()
 
-    columns = ', '.join(formatted_keys)
-    placeholders = ':' + ', :'.join(formatted_keys)
+        # Convert keys to valid named placeholders
+        formatted_keys = [key.replace(" ", "_").lower() for key in data.keys()]
 
-    sql = f"INSERT INTO ApplicationData ({columns}) VALUES ({placeholders})"
+        columns = ', '.join(formatted_keys)
+        placeholders = ':' + ', :'.join(formatted_keys)
 
-    # Create a new dictionary with formatted keys to match placeholders
-    formatted_data = {key.replace(" ", "_").lower(): value for key, value in data.items()}
+        sql = f"INSERT INTO ApplicationData ({columns}) VALUES ({placeholders})"
 
-    cursor.execute(sql, formatted_data)
-    conn.commit()
-    conn.close()
+        # Create a new dictionary with formatted keys to match placeholders
+        formatted_data = {key.replace(" ", "_").lower(): value for key, value in data.items()}
+
+        cursor.execute(sql, formatted_data)
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error occurred: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+        
+
 

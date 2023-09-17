@@ -130,9 +130,17 @@ def execute():
         # If it exists, delete all data from the ApplicationData table
         conn = sqlite3.connect('applications.db')
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM ApplicationData")
-        conn.commit()
+
+        # Check if the table exists before deleting
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ApplicationData'")
+        table_exists = cursor.fetchone()
+
+        if table_exists:
+            cursor.execute("DELETE FROM ApplicationData")
+            conn.commit()
+
         conn.close()
+
 
     # Fetch the most recently uploaded file from S3 bucket
     objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
@@ -145,26 +153,36 @@ def execute():
         FeatureTypes=["FORMS"]
     )
     doc = Document(response)
+    print("doc:") #check
+    print(doc)
     
     # Function to process and extract data from the document based on a given key
     def process_field(page, key_name):
-        field = page.form.getFieldByKey(key_name)
+    # Helper function to format the key for database insertion
+        def format_key(key):
+            return key.replace(" ", "_").lower()
+
+        # Helper function to extract data from a field
+        def extract_data_from_field(field, data_dict):
+            if field.key in keys_to_extract.keys():
+                print("Key: {}, Value: {}".format(field.key, field.value))
+                data_dict[format_key(field.key)] = field.value
 
         data = {}  # Dictionary to store key-value pairs for database insertion
 
-        if field and field.key in keys_to_extract.keys():
-            print("Key: {}, Value: {}".format(field.key, field.value))
-            # Store the key-value pair in the dictionary
-            data[field.key.replace(" ", "_").lower()] = field.value
+        main_field = page.form.getFieldByKey(key_name)
+        if main_field:
+            extract_data_from_field(main_field, data)
 
-        field_amt = page.form.searchFieldsByKey(key_name)
-        for f in field_amt:
-            if f.key in keys_to_extract.keys():
-                print("Key: {}, Value: {}".format(f.key, f.value))
-                # Store the key-value pair in the dictionary
-                data[f.key.replace(" ", "_").lower()] = f.value
+        fields_found = page.form.searchFieldsByKey(key_name)
+        for field in fields_found:
+            extract_data_from_field(field, data)
 
+        print("data:")
+        print(data)
+        
         return data
+
 
     # Accumulate data from all keys
     accumulated_data = {}  
@@ -173,8 +191,10 @@ def execute():
         for key in keys_to_extract.keys():
             data_for_key = process_field(page, key)
             accumulated_data.update(data_for_key)
+            print(data_for_key) #check
 
     # Insert the accumulated data into the database
+    print(accumulated_data)
     insert_data_into_db(accumulated_data)
 
     executemsg = "Data successfully stored in the database!"
