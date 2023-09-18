@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.debug = True
 
+
+
 # Configurations
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -154,8 +156,29 @@ def execute():
     )
     doc = Document(response)
     print("doc:") #check
-    print(doc)
+
+    for key in keys_to_extract:
+        print(key)
     
+    # Iterate over elements in the document
+    for page in doc.pages:
+
+        for i in keys_to_extract:
+            key = i + ':'
+            field = page.form.getFieldByKey(key)
+            if(field):
+                print("db col: {}".format(field.key))
+                print("db entry: {}".format(field.value))
+                print("Field: Key: {}, Value: {}".format(field.key, field.value))
+              
+    executemsg = "Data successfully stored in the database!" 
+    return render_template("index.html", executemsg=executemsg)
+            
+            
+
+
+
+'''    
     # Function to process and extract data from the document based on a given key
     def process_field(page, key_name):
     # Helper function to format the key for database insertion
@@ -184,14 +207,17 @@ def execute():
         return data
 
 
-    # Accumulate data from all keys
+   # Accumulate data from all keys
     accumulated_data = {}  
 
     for page in doc.pages:
         for key in keys_to_extract.keys():
             data_for_key = process_field(page, key)
             accumulated_data.update(data_for_key)
-            print(data_for_key) #check
+        print(data_for_key) #check
+
+
+
 
     # Insert the accumulated data into the database
     print(accumulated_data)
@@ -199,3 +225,5 @@ def execute():
 
     executemsg = "Data successfully stored in the database!"
     return render_template("index.html", executemsg=executemsg)
+
+'''
