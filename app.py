@@ -58,7 +58,7 @@ def job_information():
         job_data['yearsOfExperience'] = request.form['yearsOfExperience']
         job_data['jobLocation'] = request.form['jobLocation']
         job_data['salary'] = request.form['salary']
-        job_data['keyWords'] = clean_text(request.form['keyWords']).split(' ')
+        job_data['keyWords'] = request.form['keyWords']
         
         infomsg = "Info Successfully Submitted"
 
@@ -78,11 +78,11 @@ def job_information():
 @app.route('/upload', methods=["POST"])
 def upload():
     if request.method == "POST":
-        img = request.files['file']
-        if img:
-            filename = secure_filename(img.filename)
+        pdf = request.files['file']
+        if pdf:
+            filename = secure_filename(pdf.filename)
             full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            img.save(full_path)
+            pdf.save(full_path)
             
             # Add timestamp to the filename for S3
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -129,7 +129,7 @@ def execute():
     if not os.path.exists('applications.db'):
         setup_database(keys_to_extract)
     else:
-        # If it exists, delete all data from the ApplicationData table
+        # Initialize database (If it exists, delete all data from the ApplicationData table)
         conn = sqlite3.connect('applications.db')
         cursor = conn.cursor()
 
@@ -182,6 +182,9 @@ def analyze():
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
 
+    # Extract the user's input skills
+    user_skills = [skill.strip().lower() for skill in job_data['keyWords'].split(',')]
+
     # Execute the SQL query
     cursor.execute('SELECT first_name, last_name, years_of_experience, previous_job, your_relevant_skills FROM applications')
     
@@ -191,19 +194,31 @@ def analyze():
     # Close the connection
     conn.close()
 
-    # Format the data to match the structure expected by your table
+    # Format the data and compute the number of skill matches for each application
     data = []
     for row in rows:
+        # Get the number of skill matches for the current application
+        cleaned_app_skills = row[4].lower()
+        match_count = sum(1 for skill in user_skills if skill in cleaned_app_skills)
+
+        # Add application data with an additional "match_count" field
         data.append({
             "first_name": row[0],
             "last_name": row[1],
             "years_of_experience": row[2],
             "previous_job": row[3],
-            "your_relevant_skills": row[4]
+            "your_relevant_skills": row[4],
+            "match_count": match_count
         })
 
     # Return the formatted data as JSON
     return jsonify(data)
+
+
+
+
+
+
 
 
 
