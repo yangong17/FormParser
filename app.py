@@ -174,7 +174,36 @@ def execute():
     executemsg = "Data successfully stored in the database!" 
     return render_template("index.html", executemsg=executemsg)
             
-            
+
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    # Connect to the SQLite database
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
+
+    # Execute the SQL query
+    cursor.execute('SELECT first_name, last_name, years_of_experience, previous_job, your_relevant_skills FROM applications')
+    
+    # Fetch all rows
+    rows = cursor.fetchall()
+
+    # Close the connection
+    conn.close()
+
+    # Format the data to match the structure expected by your table
+    data = []
+    for row in rows:
+        data.append({
+            "first_name": row[0],
+            "last_name": row[1],
+            "years_of_experience": row[2],
+            "previous_job": row[3],
+            "your_relevant_skills": row[4]
+        })
+
+    # Return the formatted data as JSON
+    return jsonify(data)
 
 
 

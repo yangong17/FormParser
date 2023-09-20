@@ -3,8 +3,6 @@
 
 {% block content %}
 
-<!-- jQuery dependency, needs to be at top of document -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <h2>Form Parser V1.0</h2>
 <p style="margin-top: 20px; margin-bottom: 50px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
@@ -91,20 +89,61 @@
 <p class="alert alert-success mt-3">{{ executemsg }}</p>
 {% endif %}
 
+<!-- Review Data -->
+<form action="/analyze" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
+    <h4>View Database</h4>
+    <!-- Button to view database data -->
+    <button id="analyzeBtn" class="btn btn-secondary mt-3">View Database</button>
+</form>
+
 <!-- Placeholder for the extracted data table -->
 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
     <h4>Extracted Data:</h4>
     <table class="table table-bordered" id="extractedDataTable">
         <thead>
             <tr>
-                <th>Key</th>
-                <th>Value</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Years of Experience</th>
+                <th>Previous Job</th>
+                <th>Relevant Skills</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
 </div>
+
+<script>
+    $(document).ready(function(){
+        $("#analyzeBtn").click(function(event){
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // Send a POST request to /analyze
+            $.post("/analyze", function(data){
+                // Clear the existing rows in the table
+                $("#extractedDataTable tbody").empty();
+
+                // Loop through each row of data
+                $.each(data, function(index, row){
+                    // Create a new table row
+                    let tr = $("<tr>");
+                    
+                    // Append columns to the row
+                    tr.append($("<td>").text(row.first_name));
+                    tr.append($("<td>").text(row.last_name));
+                    tr.append($("<td>").text(row.years_of_experience));
+                    tr.append($("<td>").text(row.previous_job));
+                    tr.append($("<td>").text(row.your_relevant_skills));
+
+                    // Append the row to the table body
+                    $("#extractedDataTable tbody").append(tr);
+                });
+            });
+        });
+    });
+</script>
 
 
 <!-- Download File Button -->
