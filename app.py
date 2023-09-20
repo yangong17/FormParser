@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify
 from flask_session import Session
 from trp import Document
-from helpers import clean_text, setup_database, insert_data_into_db
+from helpers import clean_text
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -104,7 +104,7 @@ def upload():
 def execute():
 
     # Config:
-    # List of keys to extract from the document and their data type
+    # List of keys to extract from the document and their data type (For database)
     keys_to_extract = {
         "First Name": "TEXT",
         "Last Name": "TEXT",
@@ -123,26 +123,37 @@ def execute():
         "Earliest Date Available": "DATE",
         "Relevant Skills": "TEXT"
     }
+    
+    def sanitize_column_name(name):
+        # Replace spaces with underscores, remove special characters, and make lowercase
+        sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
+        return sanitized.replace(' ', '_').replace('.', '').lower()
 
-
-    # Check if the database exists
-    if not os.path.exists('applications.db'):
-        setup_database(keys_to_extract)
-    else:
-        # If it exists, delete all data from the ApplicationData table
-        conn = sqlite3.connect('applications.db')
-        cursor = conn.cursor()
-
-        # Check if the table exists before deleting
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ApplicationData'")
-        table_exists = cursor.fetchone()
-
-        if table_exists:
-            cursor.execute("DELETE FROM ApplicationData")
+    def setup_database(keys_to_extract):
+        conn = None
+        try:
+            conn = sqlite3.connect('applications.db')
+            cursor = conn.cursor()
+            
+            # Generating the column names and types dynamically
+            columns = ", ".join([f"{sanitize_column_name(key)} {value}" for key, value in keys_to_extract.items()])
+            
+            # SQL command
+            sql = f'''
+            CREATE TABLE IF NOT EXISTS ApplicationData (
+                id INTEGER PRIMARY KEY,
+                {columns}
+            )
+            '''
+            cursor.execute(sql)
             conn.commit()
-
-        conn.close()
-
+        except sqlite3.Error as e:
+            print(f"Error occurred: {e}")
+        finally:
+            if conn:
+                conn.close()
+                
+    setup_database(keys_to_extract)
 
     # Fetch the most recently uploaded file from S3 bucket
     objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
@@ -160,17 +171,19 @@ def execute():
     for key in keys_to_extract:
         print(key)
     
+    def add_colons(keys_to_extract):
+        return [key + ":" for key in keys_to_extract]
+    cleaned_keys = add_colons(keys_to_extract)
+    
     # Iterate over elements in the document
     for page in doc.pages:
-
-        for i in keys_to_extract:
-            key = i + ':'
+        for key in cleaned_keys:
             field = page.form.getFieldByKey(key)
             if(field):
                 print("db col: {}".format(field.key))
                 print("db entry: {}".format(field.value))
                 print("Field: Key: {}, Value: {}".format(field.key, field.value))
-              
+                
     executemsg = "Data successfully stored in the database!" 
     return render_template("index.html", executemsg=executemsg)
             

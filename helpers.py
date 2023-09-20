@@ -31,14 +31,26 @@ def clean_text(text):
 
 # -------
 
-def setup_database(keys_to_extract):
+def add_colons(keys_to_extract):
+        return [key + ":" for key in keys_to_extract]
+
+# -------
+
+# def sanitize_column_name(name):
+    # Replace spaces with underscores, remove special characters, and make lowercase
+#    sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
+#    return sanitized.replace(' ', '_').replace('.', '').lower()
+
+# -------
+
+def setup_database(keys_dict):
     conn = None
     try:
         conn = sqlite3.connect('applications.db')
         cursor = conn.cursor()
         
         # Generating the column names and types dynamically
-        columns = ", ".join([f"{key.replace(' ', '_').lower()} {value}" for key, value in keys_to_extract.items()])
+        columns = ", ".join([f"{sanitize_column_name(key)} {value}" for key, value in keys_dict.items()])
         
         # SQL command
         sql = f'''
