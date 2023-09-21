@@ -114,14 +114,14 @@ def execute():
         "Apartment/Unit#": "TEXT",
         "City": "TEXT",
         "State": "TEXT",
-        "Zip Code": "INTEGER",
+        "ZIP Code": "INTEGER",
         "Phone": "TEXT",
         "E-mail Address": "TEXT",
         "Job(s) You're Applying For": "TEXT",
         "Years of Experience": "INTEGER",
         "Desired Salary/Rate": "REAL",
         "Earliest Date Available": "DATE",
-        "Relevant Skills": "TEXT"
+        "Your Relevant Skills": "TEXT"
     }
     
     def sanitize_column_name(name):
@@ -174,16 +174,32 @@ def execute():
     def add_colons(keys_to_extract):
         return [key + ":" for key in keys_to_extract]
     cleaned_keys = add_colons(keys_to_extract)
-    
-    # Iterate over elements in the document
+     
+    # Establish a connection to the database
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
+
+    data_to_insert = {}
     for page in doc.pages:
         for key in cleaned_keys:
             field = page.form.getFieldByKey(key)
-            if(field):
-                print("db col: {}".format(field.key))
-                print("db entry: {}".format(field.value))
-                print("Field: Key: {}, Value: {}".format(field.key, field.value))
-                
+            if field:
+                sanitized_key = sanitize_column_name(key.replace(':', ''))
+                data_to_insert[sanitized_key] = str(field.value)
+
+    columns_str = ', '.join(data_to_insert.keys())
+    placeholders = ', '.join(['?'] * len(data_to_insert))
+    values_tuple = tuple(data_to_insert.values())
+
+    sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
+    try:
+        cursor.execute(sql, values_tuple)
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error inserting data: {e}")
+    finally:
+        conn.close()
+    
     executemsg = "Data successfully stored in the database!" 
     return render_template("index.html", executemsg=executemsg)
             

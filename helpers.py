@@ -36,10 +36,10 @@ def add_colons(keys_to_extract):
 
 # -------
 
-# def sanitize_column_name(name):
+def sanitize_column_name(name):
     # Replace spaces with underscores, remove special characters, and make lowercase
-#    sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
-#    return sanitized.replace(' ', '_').replace('.', '').lower()
+    sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
+    return sanitized.replace(' ', '_').replace('.', '').lower()
 
 # -------
 
