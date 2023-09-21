@@ -80,7 +80,7 @@ def upload():
     if request.method == "POST":
         pdf = request.files['file']
         if pdf:
-            filename = secure_filename(img.filename)
+            filename = secure_filename(pdf.filename)
             full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             pdf.save(full_path)
             
@@ -212,7 +212,7 @@ def analyze():
     cursor = conn.cursor()
 
     # Extract the user's input skills
-    user_skills = [skill.strip().lower() for skill in job_data['keyWords']]
+    user_skills = [skill.strip().lower() for skill in job_data['keyWords'].split(',')]
 
     # Execute the SQL query
     cursor.execute('SELECT first_name, last_name, years_of_experience, your_relevant_skills FROM ApplicationData')
@@ -226,16 +226,20 @@ def analyze():
     # Format the data and compute the number of skill matches for each application
     data = []
     for row in rows:
-        # Get the number of skill matches for the current application
+        # Get the list of matched skills for the current application
         cleaned_app_skills = row[3].lower()
-        match_count = sum(1 for skill in user_skills if skill in cleaned_app_skills)
+        matched_skills_list = [skill for skill in user_skills if skill in cleaned_app_skills]
+        
+        # Convert the list to a comma-separated string
+        matched_skills = ', '.join(matched_skills_list)
 
         data.append({
             "first_name": row[0],
             "last_name": row[1],
             "years_of_experience": row[2],
             "your_relevant_skills": row[3],
-            "match_count": match_count
+            "match_count": len(matched_skills_list),  # Use the length of matched_skills_list for the match_count
+            "matched_skills": matched_skills,
         })
 
     print(user_skills)

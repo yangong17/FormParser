@@ -107,6 +107,7 @@
                 <th>Years of Experience</th>
                 <th>Relevant Skills</th>
                 <th>Match Count</th>
+                <th>Matched Skills</th>
             </tr>
         </thead>
         <tbody>
@@ -134,9 +135,9 @@
                     tr.append($("<td>").text(row.first_name));
                     tr.append($("<td>").text(row.last_name));
                     tr.append($("<td>").text(row.years_of_experience));
-                    tr.append($("<td>").text(row.previous_job));
                     tr.append($("<td>").text(row.your_relevant_skills));
-                    tr.append($("<td>").text(row.match_count)); 
+                    tr.append($("<td>").text(row.match_count));
+                        tr.append($("<td>").text(row.matched_skills));  
 
                     // Append the row to the table body
                     $("#extractedDataTable tbody").append(tr);
