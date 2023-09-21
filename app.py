@@ -180,6 +180,13 @@ def execute():
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
 
+    # Clear all data in the ApplicationData table
+    try:
+        cursor.execute("DELETE FROM ApplicationData")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error deleting data: {e}")
+    
     data_to_insert = {}
     for page in doc.pages:
         for key in cleaned_keys:
