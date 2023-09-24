@@ -144,7 +144,11 @@ def execute():
         # Replace spaces with underscores, remove special characters, and make lowercase
         sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
         return sanitized.replace(' ', '_').replace('.', '').lower()
-
+    
+    def add_colons(keys_to_extract):
+        return [key + ":" for key in keys_to_extract]
+    cleaned_keys = add_colons(keys_to_extract)
+    
     def setup_database(keys_to_extract):
         conn = None
         try:
@@ -165,16 +169,17 @@ def execute():
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error occurred: {e}")
+   
                    
         # Clear all data in the ApplicationData table
-        try:
-            cursor.execute("DELETE FROM ApplicationData")
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Error deleting data: {e}")
-        finally:
-            if conn:
-                conn.close()
+        #try:
+        #    cursor.execute("DELETE FROM ApplicationData")
+        #    conn.commit()
+        #except sqlite3.Error as e:
+        #    print(f"Error deleting data: {e}")
+        #finally:
+        #    if conn:
+        #        conn.close()
                 
     setup_database(keys_to_extract)
     
@@ -189,6 +194,12 @@ def execute():
     # Filter out all files that have the same timestamp as the latest file
     files_to_process = [obj['Key'] for obj in objs if obj['LastModified'] == latest_timestamp]
 
+    
+    # Establish a connection to the database
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
+    
+    
     for file_key in files_to_process:
         print(f"Processing file: {file_key}")
         
@@ -203,48 +214,32 @@ def execute():
         for key in keys_to_extract:
             print(key)
         
-        def add_colons(keys_to_extract):
-            return [key + ":" for key in keys_to_extract]
-        cleaned_keys = add_colons(keys_to_extract)
-        
-        # Establish a connection to the database
-        conn = sqlite3.connect('applications.db')
-        cursor = conn.cursor()
-            
-        all_data_to_insert = []  #List to hold data for all pages
-
-        for page in doc.pages: 
-            data_to_insert = {}
+        data_to_insert = {}
+        for page in doc.pages:
             for key in cleaned_keys:
                 field = page.form.getFieldByKey(key)
                 if field:
                     sanitized_key = sanitize_column_name(key.replace(':', ''))
                     data_to_insert[sanitized_key] = str(field.value)
-            all_data_to_insert.append(data_to_insert)  #Append each page's data
 
-        #Insert data for all pages into local database
-        for data_to_insert in all_data_to_insert:
-            columns_str = ', '.join(data_to_insert.keys())
-            placeholders = ', '.join(['?'] * len(data_to_insert))
-            values_tuple = tuple(data_to_insert.values())
+        columns_str = ', '.join(data_to_insert.keys())
+        placeholders = ', '.join(['?'] * len(data_to_insert))
+        values_tuple = tuple(data_to_insert.values())
 
-            sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
-            try:
-                cursor.execute(sql, values_tuple)
-                conn.commit()
-            except sqlite3.Error as e:
-                print(f"Error inserting data: {e}")
-        
+        sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
         try:
             cursor.execute(sql, values_tuple)
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error inserting data: {e}")
-        finally:
-            conn.close()
-    
+            
+              
+    conn.close()    
     executemsg = "Data successfully stored in the database!" 
+    
     return render_template("index.html", executemsg=executemsg)
+    
+
 
 
 @app.route("/analyze", methods=["POST"])
