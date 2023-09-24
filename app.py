@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import boto3
+from PyPDF2 import PdfReader, PdfWriter
+import tempfile
 from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify
 from flask_session import Session
@@ -54,19 +56,15 @@ def index():
 @app.route('/jobinformation', methods=['GET', 'POST'])
 def job_information():
     if request.method == 'POST':
-        job_data['jobTitle'] = request.form['jobTitle']
         job_data['yearsOfExperience'] = request.form['yearsOfExperience']
-        job_data['jobLocation'] = request.form['jobLocation']
         job_data['salary'] = request.form['salary']
         job_data['keyWords'] = request.form['keyWords']
         
         infomsg = "Info Successfully Submitted"
 
-        print(job_data['jobTitle'])
-        print(job_data['yearsOfExperience'])
-        print(job_data['jobLocation'])
-        print(job_data['salary'])
-        print(job_data['keyWords'])
+        print(job_data['yearsOfExperience']) #Testing
+        print(job_data['salary']) #Testing
+        print(job_data['keyWords']) #Testing
         
         return render_template("index.html", infomsg=infomsg, job_data=job_data)
     else:
@@ -84,16 +82,33 @@ def upload():
             full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             pdf.save(full_path)
             
-            # Add timestamp to the filename for S3
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            s3_filename = f"{filename.rsplit('.', 1)[0]}_{timestamp}.{filename.rsplit('.', 1)[1]}"
+            # Open the PDF and determine the number of pages
+            with open(full_path, 'rb') as fr:
+                reader = PdfReader(fr)
+                total_pages = len(reader.pages)
+                
+                for page_num in range(total_pages):
+                    writer = PdfWriter()
+                    writer.add_page(reader.pages[page_num])
+
+                    # Save each page to a temp file
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as page_file:
+                        writer.write(page_file)
+                        page_file_name = page_file.name
+
+                    # Add timestamp to the filename for S3
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    s3_filename = f"{filename.rsplit('.', 1)[0]}_page{page_num + 1}_{timestamp}.{filename.rsplit('.', 1)[1]}"
+
+                    # Upload the single-page PDF to the S3 bucket
+                    s3.upload_file(
+                        Bucket=bucket_name,
+                        Filename=page_file_name, 
+                        Key=s3_filename
+                    )
+                    os.remove(page_file_name)  # Delete the temp file after uploading
             
-            s3.upload_file(
-                Bucket=bucket_name,
-                Filename=full_path,  # Use the full path here
-                Key=s3_filename
-            )
-            uploadmsg = "File Successfully Uploaded"
+            uploadmsg = "File Successfully Uploaded and Split"
             return render_template("index.html", uploadmsg=uploadmsg)
         else:
             uploadmsg = "Failed to Upload File"
@@ -150,63 +165,83 @@ def execute():
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error occurred: {e}")
+                   
+        # Clear all data in the ApplicationData table
+        try:
+            cursor.execute("DELETE FROM ApplicationData")
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error deleting data: {e}")
         finally:
             if conn:
                 conn.close()
                 
     setup_database(keys_to_extract)
+    
 
-    # Fetch the most recently uploaded file from S3 bucket
+    # Fetch the most recently uploaded file(s) from S3 bucket
     objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
     objs.sort(key=lambda e: e['LastModified'], reverse=True)
-    latest_file = objs[0]['Key']
 
-    # Call Amazon Textract
-    response = textract.analyze_document(
-        Document={'S3Object': {'Bucket': bucket_name, 'Name': latest_file}},
-        FeatureTypes=["FORMS"]
-    )
-    doc = Document(response)
-    print("doc:") #check
+    # Get the timestamp of the most recent file
+    latest_timestamp = objs[0]['LastModified']
 
-    for key in keys_to_extract:
-        print(key)
-    
-    def add_colons(keys_to_extract):
-        return [key + ":" for key in keys_to_extract]
-    cleaned_keys = add_colons(keys_to_extract)
-     
-    # Establish a connection to the database
-    conn = sqlite3.connect('applications.db')
-    cursor = conn.cursor()
+    # Filter out all files that have the same timestamp as the latest file
+    files_to_process = [obj['Key'] for obj in objs if obj['LastModified'] == latest_timestamp]
 
-    # Clear all data in the ApplicationData table
-    try:
-        cursor.execute("DELETE FROM ApplicationData")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error deleting data: {e}")
-    
-    data_to_insert = {}
-    for page in doc.pages:
-        for key in cleaned_keys:
-            field = page.form.getFieldByKey(key)
-            if field:
-                sanitized_key = sanitize_column_name(key.replace(':', ''))
-                data_to_insert[sanitized_key] = str(field.value)
+    for file_key in files_to_process:
+        print(f"Processing file: {file_key}")
+        
+        # Call Amazon Textract
+        response = textract.analyze_document(
+            Document={'S3Object': {'Bucket': bucket_name, 'Name': file_key}},
+            FeatureTypes=["FORMS"]
+        )
 
-    columns_str = ', '.join(data_to_insert.keys())
-    placeholders = ', '.join(['?'] * len(data_to_insert))
-    values_tuple = tuple(data_to_insert.values())
+        doc = Document(response)
 
-    sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
-    try:
-        cursor.execute(sql, values_tuple)
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error inserting data: {e}")
-    finally:
-        conn.close()
+        for key in keys_to_extract:
+            print(key)
+        
+        def add_colons(keys_to_extract):
+            return [key + ":" for key in keys_to_extract]
+        cleaned_keys = add_colons(keys_to_extract)
+        
+        # Establish a connection to the database
+        conn = sqlite3.connect('applications.db')
+        cursor = conn.cursor()
+            
+        all_data_to_insert = []  #List to hold data for all pages
+
+        for page in doc.pages: 
+            data_to_insert = {}
+            for key in cleaned_keys:
+                field = page.form.getFieldByKey(key)
+                if field:
+                    sanitized_key = sanitize_column_name(key.replace(':', ''))
+                    data_to_insert[sanitized_key] = str(field.value)
+            all_data_to_insert.append(data_to_insert)  #Append each page's data
+
+        #Insert data for all pages into local database
+        for data_to_insert in all_data_to_insert:
+            columns_str = ', '.join(data_to_insert.keys())
+            placeholders = ', '.join(['?'] * len(data_to_insert))
+            values_tuple = tuple(data_to_insert.values())
+
+            sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
+            try:
+                cursor.execute(sql, values_tuple)
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f"Error inserting data: {e}")
+        
+        try:
+            cursor.execute(sql, values_tuple)
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error inserting data: {e}")
+        finally:
+            conn.close()
     
     executemsg = "Data successfully stored in the database!" 
     return render_template("index.html", executemsg=executemsg)
