@@ -5,12 +5,75 @@
 
 
 <h2>Form Parser V1.0</h2>
-<p style="margin-top: 20px; margin-bottom: 50px;">Employee Information Sheets → Data Extraction → Exported as .csv</p>
+<p style="margin-top: 20px; margin-bottom: 50px;"></p>
 
+  
+<!-- Upload Job Applications -->
+<form action="/upload" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data" onsubmit="return confirmUpload()">
     
+    <h4 style="margin-top: 40px; margin-bottom: 40px;">1. Upload Job Applications</h4>
 
+    <!-- Dropdown for Template Selection -->
+    <div class="form-group">
+        <label for="templateSelection">Select Job Application Template:</label>
+        <select class="form-control" id="templateSelection" name="template">
+            <option value="manufacturingTemplate1">Manufacturing Template 1</option>
+        </select>
+    </div>
+
+    <!-- Buttons for Download and Preview -->
+    <div class="form-group">
+        <a href="{{ url_for('static', filename='form_templates/General Job Application - Blank.pdf') }}" download class="btn btn-primary">Download</a>
+        <a href="{{ url_for('static', filename='form_templates/General Job Application - Blank.pdf') }}" target="_blank" class="btn btn-secondary">Preview</a>
+    </div>
+
+    <br>
+
+
+    <!-- Upload PDF -->
+    <div class="form-group">
+        <input type="file" class="form-control-file" id="pdf" name="file" accept=".pdf">
+    </div>
+    <!-- Submit Button for Upload -->
+    <input type="submit" name="upload" value="Upload" class="btn btn-success">
+
+</form>
+
+<script>
+    function confirmUpload() {
+        return confirm("Does the job application format match the chosen template (Manufacturing Template 1)?");
+    }
+</script>
+
+
+
+
+<!-- Confirmation Message -->
+{% if uploadmsg %}
+<p class="alert alert-success mt-3">{{ uploadmsg }}</p>
+<script>
+    $("#pdf").attr("disabled", "disabled");  // Disable the file input
+    $("input[type='submit']").attr("disabled", "disabled");  // Disable the upload button
+</script>
+{% endif %}
+
+<form action="/execute" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
+   
+    <h4>2. Analyze with Amazon Textract</h4>
+
+    <!-- Button to run Analysis -->
+    <button id="executeBtn" class="btn btn-secondary mt-3">Analyze</button>
+
+</form>
+
+<!-- Confirmation Message -->
+{% if executemsg %}
+<p class="alert alert-success mt-3">{{ executemsg }}</p>
+{% endif %}
+
+<!-- Input Job Information -->
 <form action="/jobinformation" style="margin-top: 40px; margin-bottom: 40px;" method="post">
-    <h4>1. Input Job Information</h4>
+    <h4>3. Filter Results</h4>
     <p>Enter details of job to compare applications to:</p>
 
     <div>
@@ -39,44 +102,7 @@
 {% endif %}
 
 
-<form action="/upload" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
-    
-    <h4>2. Upload Job Applications</h4>
 
-
-    <!-- Upload PDF -->
-    <div class="form-group">
-        <input type="file" class="form-control-file" id="pdf" name="file" accept=".pdf">
-    </div>
-
-    <!-- Submit Button for Upload -->
-    <input type="submit" name="upload" value="Upload" class="btn btn-success">
-
-</form>
-
-<!-- Confirmation Message -->
-{% if uploadmsg %}
-<p class="alert alert-success mt-3">{{ uploadmsg }}</p>
-<script>
-    $("#pdf").attr("disabled", "disabled");  // Disable the file input
-    $("input[type='submit']").attr("disabled", "disabled");  // Disable the upload button
-</script>
-{% endif %}
-
-
-<form action="/execute" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
-   
-    <h4>Find Best Matches</h4>
-
-    <!-- Button to run Analysis -->
-    <button id="executeBtn" class="btn btn-secondary mt-3">Analyze</button>
-
-</form>
-
-<!-- Confirmation Message -->
-{% if executemsg %}
-<p class="alert alert-success mt-3">{{ executemsg }}</p>
-{% endif %}
 
 <!-- Review Data -->
 <form action="/analyze" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
