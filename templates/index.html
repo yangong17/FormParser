@@ -6,7 +6,7 @@
 
 <h2>Form Parser V1.0</h2>
 
-<hr class="dashed-line">  
+<hr>  
 <!-- ============================================================================================================================================== -->
 
 <!-- Upload Forms -->
@@ -57,7 +57,7 @@
 </script>
 {% endif %}
 
-<hr class="dashed-line">
+<hr>
 <!-- ============================================================================================================================================== -->
 
 <form action="/execute" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
@@ -74,9 +74,11 @@
 <p class="alert alert-success mt-3">{{ executemsg }}</p>
 {% endif %}
 
-<hr class="dashed-line">  
+<hr> 
+<!-- ============================================================================================================================================== -->
 
-<!-- Input Job Information -->
+
+<!-- Filter Results -->
 <form action="/jobinformation" style="margin-top: 40px; margin-bottom: 40px;" method="post">
     <h4>3. Filter Results</h4>
     <p>Enter details of job to compare applications to:</p>
@@ -115,6 +117,8 @@
     <button id="analyzeBtn" type="button" class="btn btn-secondary mt-3">View Database</button>
 </form>
 
+<button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
+
 <!-- Placeholder for the extracted data table -->
 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
     <h4>Extracted Data:</h4>
@@ -136,33 +140,54 @@
 
 <script>
     $(document).ready(function(){
+        let currentData = [];  // Store the retrieved data for sorting
+
         $("#analyzeBtn").click(function(event){
-            // Prevent the default form submission
-            event.preventDefault();
+            // ... (Your existing code)
 
             // Send a POST request to /analyze
             $.post("/analyze", function(data){
+                currentData = data;  // Store the data
+
                 // Clear the existing rows in the table
                 $("#extractedDataTable tbody").empty();
 
-                // Loop through each row of data
-                $.each(data, function(index, row){
-                    // Create a new table row
-                    let tr = $("<tr>");
-                    
-                    // Append columns to the row
-                    tr.append($("<td>").text(row.first_name));
-                    tr.append($("<td>").text(row.last_name));
-                    tr.append($("<td>").text(row.years_of_experience));
-                    tr.append($("<td>").text(row.your_relevant_skills));
-                    tr.append($("<td>").text(row.match_count));
-                        tr.append($("<td>").text(row.matched_skills));  
-
-                    // Append the row to the table body
-                    $("#extractedDataTable tbody").append(tr);
-                });
+                populateTable(currentData);  // Use a function to populate the table
             });
         });
+
+        // CHANGES MADE HERE: Added a click handler for the sort button
+        $("#sortBtn").click(function(){
+            if(currentData && currentData.length) {
+                // Sort the data by match_count (highest first)
+                let sortedData = currentData.sort((a, b) => b.match_count - a.match_count);
+
+                // Clear the existing rows in the table
+                $("#extractedDataTable tbody").empty();
+
+                populateTable(sortedData);  // Use the same function to populate the table with sorted data
+            }
+        });
+
+        // CHANGES MADE HERE: Extracted table populating code into a separate function for reusability
+        function populateTable(data) {
+            // Loop through each row of data
+            $.each(data, function(index, row){
+                // Create a new table row
+                let tr = $("<tr>");
+                
+                // Append columns to the row
+                tr.append($("<td>").text(row.first_name));
+                tr.append($("<td>").text(row.last_name));
+                tr.append($("<td>").text(row.years_of_experience));
+                tr.append($("<td>").text(row.your_relevant_skills));
+                tr.append($("<td>").text(row.match_count));
+                tr.append($("<td>").text(row.matched_skills));  
+
+                // Append the row to the table body
+                $("#extractedDataTable tbody").append(tr);
+            });
+        }
     });
 </script>
 

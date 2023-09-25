@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.debug = True
 
 
-
+# =======================================================================
 # Configurations
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -24,7 +24,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 
-# -------------
+# =======================================================================
 # Amazon Config
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
@@ -41,43 +41,34 @@ textract = boto3.client('textract',
 
 bucket_name = 'formparser'
 
-# -------------
+# =======================================================================
 # Other Configs
 
 job_data = {} # in-memory storage for the job information
 
-# -------------
+# =======================================================================
+# Home Page
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     return render_template("index.html")
 
-
-@app.route('/jobinformation', methods=['GET', 'POST'])
-def job_information():
-    if request.method == 'POST':
-        job_data['yearsOfExperience'] = request.form['yearsOfExperience']
-        job_data['salary'] = request.form['salary']
-        job_data['keyWords'] = request.form['keyWords']
-        
-        infomsg = "Info Successfully Submitted"
-
-        print(job_data['yearsOfExperience']) #Testing
-        print(job_data['salary']) #Testing
-        print(job_data['keyWords']) #Testing
-        
-        return render_template("index.html", infomsg=infomsg, job_data=job_data)
-    else:
-        infomsg = "Failed to Submit Info"
-        return render_template("index.html", infomsg=infomsg, job_data=job_data)
-
-
+# =======================================================================
+# Upload Forms (/upload)
 
 @app.route('/upload', methods=["POST"])
 def upload():
     if request.method == "POST":
         pdf = request.files['file']
         if pdf:
+            # Step 1: List all objects in the S3 bucket
+            objects = s3.list_objects_v2(Bucket=bucket_name)
+            
+            # Step 2: Delete each object
+            if 'Contents' in objects:
+                for obj in objects['Contents']:
+                    s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
+            
             filename = secure_filename(pdf.filename)
             full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             pdf.save(full_path)
@@ -113,7 +104,9 @@ def upload():
         else:
             uploadmsg = "Failed to Upload File"
             return render_template("index.html", uploadmsg=uploadmsg)
-    
+
+# =======================================================================
+# Analyze with Amazon Textract (/execute)
 
 @app.route("/execute", methods=["POST"])
 def execute():
@@ -144,11 +137,7 @@ def execute():
         # Replace spaces with underscores, remove special characters, and make lowercase
         sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
         return sanitized.replace(' ', '_').replace('.', '').lower()
-    
-    def add_colons(keys_to_extract):
-        return [key + ":" for key in keys_to_extract]
-    cleaned_keys = add_colons(keys_to_extract)
-    
+
     def setup_database(keys_to_extract):
         conn = None
         try:
@@ -169,37 +158,29 @@ def execute():
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error occurred: {e}")
-   
-                   
-        # Clear all data in the ApplicationData table
-        #try:
-        #    cursor.execute("DELETE FROM ApplicationData")
-        #    conn.commit()
-        #except sqlite3.Error as e:
-        #    print(f"Error deleting data: {e}")
-        #finally:
-        #    if conn:
-        #        conn.close()
+
+        finally:
+            if conn:
+                conn.close()
                 
     setup_database(keys_to_extract)
     
 
-    # Fetch the most recently uploaded file(s) from S3 bucket
+    # Fetch all files from S3 bucket
     objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
-    objs.sort(key=lambda e: e['LastModified'], reverse=True)
+    files_to_process = [obj['Key'] for obj in objs]
 
-    # Get the timestamp of the most recent file
-    latest_timestamp = objs[0]['LastModified']
-
-    # Filter out all files that have the same timestamp as the latest file
-    files_to_process = [obj['Key'] for obj in objs if obj['LastModified'] == latest_timestamp]
-
-    
     # Establish a connection to the database
     conn = sqlite3.connect('applications.db')
     cursor = conn.cursor()
-    
-    
+
+    # Delete all entries in the table "ApplicationData"
+    try:
+        cursor.execute("DELETE FROM ApplicationData")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error deleting data: {e}")
+
     for file_key in files_to_process:
         print(f"Processing file: {file_key}")
         
@@ -210,36 +191,64 @@ def execute():
         )
 
         doc = Document(response)
-
-        for key in keys_to_extract:
-            print(key)
         
-        data_to_insert = {}
-        for page in doc.pages:
+        def add_colons(keys_to_extract):
+            return [key + ":" for key in keys_to_extract]
+        cleaned_keys = add_colons(keys_to_extract)
+            
+        all_data_to_insert = []  #List to hold data for all pages
+
+        for page in doc.pages: 
+            data_to_insert = {}
             for key in cleaned_keys:
                 field = page.form.getFieldByKey(key)
                 if field:
                     sanitized_key = sanitize_column_name(key.replace(':', ''))
                     data_to_insert[sanitized_key] = str(field.value)
+            all_data_to_insert.append(data_to_insert)  #Append each page's data
 
-        columns_str = ', '.join(data_to_insert.keys())
-        placeholders = ', '.join(['?'] * len(data_to_insert))
-        values_tuple = tuple(data_to_insert.values())
+        #Insert data for all pages into local database
+        for data_to_insert in all_data_to_insert:
+            columns_str = ', '.join(data_to_insert.keys())
+            placeholders = ', '.join(['?'] * len(data_to_insert))
+            values_tuple = tuple(data_to_insert.values())
 
-        sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
-        try:
-            cursor.execute(sql, values_tuple)
-            conn.commit()
-        except sqlite3.Error as e:
-            print(f"Error inserting data: {e}")
-            
-              
-    conn.close()    
+            sql = f"INSERT INTO ApplicationData ({columns_str}) VALUES ({placeholders})"
+            try:
+                cursor.execute(sql, values_tuple)
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f"Error inserting data: {e}")
+        
+
+    conn.close()
+    
     executemsg = "Data successfully stored in the database!" 
-    
     return render_template("index.html", executemsg=executemsg)
-    
 
+# =======================================================================
+# Input Job Info (/jobinformation)
+
+@app.route('/jobinformation', methods=['GET', 'POST'])
+def job_information():
+    if request.method == 'POST':
+        job_data['yearsOfExperience'] = request.form['yearsOfExperience']
+        job_data['salary'] = request.form['salary']
+        job_data['keyWords'] = request.form['keyWords']
+        
+        infomsg = "Info Successfully Submitted"
+
+        print(job_data['yearsOfExperience']) #Testing
+        print(job_data['salary']) #Testing
+        print(job_data['keyWords']) #Testing
+        
+        return render_template("index.html", infomsg=infomsg, job_data=job_data)
+    else:
+        infomsg = "Failed to Submit Info"
+        return render_template("index.html", infomsg=infomsg, job_data=job_data)
+
+# =======================================================================
+# Compare Forms to Filters
 
 
 @app.route("/analyze", methods=["POST"])
@@ -279,7 +288,11 @@ def analyze():
             "matched_skills": matched_skills,
         })
 
-    print(user_skills)
+    # Sort the data by match_count (highest first)
+    sorted_data = sorted(data, key=lambda x: x["match_count"], reverse=True)
+
+    # Return the sorted data as JSON
+    return jsonify(sorted_data)
 
     # Return the formatted data as JSON
     return jsonify(data)        
