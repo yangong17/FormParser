@@ -5,19 +5,20 @@
 
 
 <h2>Form Parser V1.0</h2>
-<p style="margin-top: 20px; margin-bottom: 50px;"></p>
 
-  
-<!-- Upload Job Applications -->
+<hr class="dashed-line">  
+<!-- ============================================================================================================================================== -->
+
+<!-- Upload Forms -->
 <form action="/upload" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data" onsubmit="return confirmUpload()">
     
-    <h4 style="margin-top: 40px; margin-bottom: 40px;">1. Upload Job Applications</h4>
+    <h4 style="margin-top: 40px; margin-bottom: 40px;">1. Upload Forms</h4>
 
     <!-- Dropdown for Template Selection -->
     <div class="form-group">
-        <label for="templateSelection">Select Job Application Template:</label>
+        <label for="templateSelection">Select Form Template:</label>
         <select class="form-control" id="templateSelection" name="template">
-            <option value="manufacturingTemplate1">Manufacturing Template 1</option>
+            <option value="manufacturingTemplate1">Manufacturing Job Application 1</option>
         </select>
     </div>
 
@@ -41,12 +42,11 @@
 
 <script>
     function confirmUpload() {
-        return confirm("Does the job application format match the chosen template (Manufacturing Template 1)?");
+        var selectedTemplate = document.getElementById("templateSelection");
+        var selectedText = selectedTemplate.options[selectedTemplate.selectedIndex].text;
+        return confirm("Click OK to confirm upload. Ensure that the form template matches the chosen files (" + selectedText + ")");
     }
 </script>
-
-
-
 
 <!-- Confirmation Message -->
 {% if uploadmsg %}
@@ -57,12 +57,15 @@
 </script>
 {% endif %}
 
+<hr class="dashed-line">
+<!-- ============================================================================================================================================== -->
+
 <form action="/execute" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
    
-    <h4>2. Analyze with Amazon Textract</h4>
+    <h4 style="margin-top: 40px; margin-bottom: 40px;">2. Analyze with Amazon Textract</h4>
 
     <!-- Button to run Analysis -->
-    <button id="executeBtn" class="btn btn-secondary mt-3">Analyze</button>
+    <button id="executeBtn">Analyze</button>
 
 </form>
 
@@ -70,6 +73,8 @@
 {% if executemsg %}
 <p class="alert alert-success mt-3">{{ executemsg }}</p>
 {% endif %}
+
+<hr class="dashed-line">  
 
 <!-- Input Job Information -->
 <form action="/jobinformation" style="margin-top: 40px; margin-bottom: 40px;" method="post">
@@ -100,7 +105,6 @@
 {% if infomsg %}
 <p class="alert alert-success mt-3">{{ infomsg }}</p>
 {% endif %}
-
 
 
 
