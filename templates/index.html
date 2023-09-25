@@ -77,65 +77,70 @@
 <hr> 
 <!-- ============================================================================================================================================== -->
 
+<div class="row">
+    
+    <!-- Review Data -->
+    <div class="col-md-6">
+        <form action="/analyze" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
+            <h4>View Database</h4>
+            <!-- Button to view database data -->
+            <button id="analyzeBtn" type="button" class="btn btn-secondary mt-3">View Database</button>
+        </form>
 
-<!-- Filter Results -->
-<form action="/jobinformation" style="margin-top: 40px; margin-bottom: 40px;" method="post">
-    <h4>3. Filter Results</h4>
-    <p>Enter details of job to compare applications to:</p>
+        <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
 
-    <div>
-        <label for="yearsOfExperience">Years of Experience:</label>
-        <input type="number" id="yearsOfExperience" name="yearsOfExperience" placeholder="e.g: 5" required>
+        <!-- Placeholder for the extracted data table -->
+        <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
+            <h4>Extracted Data:</h4>
+            <table class="table table-bordered" id="extractedDataTable">
+                <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Years of Experience</th>
+                        <th>Relevant Skills</th>
+                        <th>Match Count</th>
+                        <th>Matched Skills</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
+    
+    <!-- Filter Results -->
+    <div class="col-md-6">
+        <form action="/filter" style="margin-top: 40px; margin-bottom: 40px;" method="post">
+            <h4>3. Filter Results</h4>
+            <p>Enter details of job to compare applications to:</p>
 
-    <div>
-        <label for="salary">Annual Compensation:</label>
-        <input type="number" id="salary" name="salary" placeholder="e.g: 65000" required>
+            <div>
+                <label for="yearsOfExperience">Years of Experience:</label>
+                <input type="number" id="yearsOfExperience" name="yearsOfExperience" placeholder="e.g: 5" required>
+            </div>
+
+            <div>
+                <label for="salary">Annual Compensation:</label>
+                <input type="number" id="salary" name="salary" placeholder="e.g: 65000" required>
+            </div>
+
+            <div>
+                <label for="keyWords">Job Duties and Responsibilties:</label><br>
+                <textarea id="keyWords" name="keyWords" rows="4" cols="50" required></textarea>
+            </div>
+
+            <div>
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    
+        <!-- Confirmation Message -->
+        {% if infomsg %}
+        <p class="alert alert-success mt-3">{{ infomsg }}</p>
+        {% endif %}
+
     </div>
-
-    <div>
-        <label for="keyWords">Job Duties and Responsibilties:</label><br>
-        <textarea id="keyWords" name="keyWords" rows="4" cols="50" required></textarea>
-    </div>
-
-    <div>
-        <input type="submit" value="Submit">
-    </div>
-</form>
-
-<!-- Confirmation Message -->
-{% if infomsg %}
-<p class="alert alert-success mt-3">{{ infomsg }}</p>
-{% endif %}
-
-
-
-<!-- Review Data -->
-<form action="/analyze" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
-    <h4>View Database</h4>
-    <!-- Button to view database data -->
-    <button id="analyzeBtn" type="button" class="btn btn-secondary mt-3">View Database</button>
-</form>
-
-<button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
-
-<!-- Placeholder for the extracted data table -->
-<div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
-    <h4>Extracted Data:</h4>
-    <table class="table table-bordered" id="extractedDataTable">
-        <thead>
-            <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Years of Experience</th>
-                <th>Relevant Skills</th>
-                <th>Match Count</th>
-                <th>Matched Skills</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
 </div>
 
 <script>

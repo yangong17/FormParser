@@ -99,7 +99,7 @@ def upload():
                     )
                     os.remove(page_file_name)  # Delete the temp file after uploading
             
-            uploadmsg = "File Successfully Uploaded and Split"
+            uploadmsg = f"File Successfully Uploaded and Split into {total_pages} page(s)"
             return render_template("index.html", uploadmsg=uploadmsg)
         else:
             uploadmsg = "Failed to Upload File"
@@ -111,7 +111,8 @@ def upload():
 @app.route("/execute", methods=["POST"])
 def execute():
 
-    # Config:
+# Config:
+
     # List of keys to extract from the document and their data type (For database)
     keys_to_extract = {
         "First Name": "TEXT",
@@ -133,6 +134,11 @@ def execute():
         "Your Relevant Skills": "TEXT"
     }
     
+    # Counter for total pages processed
+    total_pages_processed = 0
+
+# =======================================================================
+
     def sanitize_column_name(name):
         # Replace spaces with underscores, remove special characters, and make lowercase
         sanitized = ''.join(e for e in name if e.isalnum() or e == ' ')
@@ -184,7 +190,7 @@ def execute():
     for file_key in files_to_process:
         print(f"Processing file: {file_key}")
         
-        # Call Amazon Textract
+        # CALL AMAZON TEXTRACT
         response = textract.analyze_document(
             Document={'S3Object': {'Bucket': bucket_name, 'Name': file_key}},
             FeatureTypes=["FORMS"]
@@ -206,6 +212,7 @@ def execute():
                     sanitized_key = sanitize_column_name(key.replace(':', ''))
                     data_to_insert[sanitized_key] = str(field.value)
             all_data_to_insert.append(data_to_insert)  #Append each page's data
+            total_pages_processed += 1 #Update counter for each page processed
 
         #Insert data for all pages into local database
         for data_to_insert in all_data_to_insert:
@@ -223,14 +230,15 @@ def execute():
 
     conn.close()
     
-    executemsg = "Data successfully stored in the database!" 
+    executemsg = f"{total_pages_processed} page(s) analyzed and imported into applications.db" 
     return render_template("index.html", executemsg=executemsg)
 
 # =======================================================================
-# Input Job Info (/jobinformation)
+# Input Job Info (/filter)
 
-@app.route('/jobinformation', methods=['GET', 'POST'])
-def job_information():
+@app.route('/filter', methods=['GET', 'POST'])
+def filter():
+     
     if request.method == 'POST':
         job_data['yearsOfExperience'] = request.form['yearsOfExperience']
         job_data['salary'] = request.form['salary']
@@ -293,58 +301,8 @@ def analyze():
 
     # Return the sorted data as JSON
     return jsonify(sorted_data)
-
-    # Return the formatted data as JSON
-    return jsonify(data)        
-
-
-
-'''    
-    # Function to process and extract data from the document based on a given key
-    def process_field(page, key_name):
-    # Helper function to format the key for database insertion
-        def format_key(key):
-            return key.replace(" ", "_").lower()
-
-        # Helper function to extract data from a field
-        def extract_data_from_field(field, data_dict):
-            if field.key in keys_to_extract.keys():
-                print("Key: {}, Value: {}".format(field.key, field.value))
-                data_dict[format_key(field.key)] = field.value
-
-        data = {}  # Dictionary to store key-value pairs for database insertion
-
-        main_field = page.form.getFieldByKey(key_name)
-        if main_field:
-            extract_data_from_field(main_field, data)
-
-        fields_found = page.form.searchFieldsByKey(key_name)
-        for field in fields_found:
-            extract_data_from_field(field, data)
-
-        print("data:")
-        print(data)
-        
-        return data
-
-
-   # Accumulate data from all keys
-    accumulated_data = {}  
-
-    for page in doc.pages:
-        for key in keys_to_extract.keys():
-            data_for_key = process_field(page, key)
-            accumulated_data.update(data_for_key)
-        print(data_for_key) #check
+  
 
 
 
 
-    # Insert the accumulated data into the database
-    print(accumulated_data)
-    insert_data_into_db(accumulated_data)
-
-    executemsg = "Data successfully stored in the database!"
-    return render_template("index.html", executemsg=executemsg)
-
-'''
