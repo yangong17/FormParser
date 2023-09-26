@@ -52,6 +52,11 @@ job_data = {} # in-memory storage for the job information
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    
+    job_data['yearsOfExperience'] = 0
+    job_data['salary'] = 0
+    job_data['keyWords'] = 'none'
+    
     return render_template("index.html")
 
 # =======================================================================
