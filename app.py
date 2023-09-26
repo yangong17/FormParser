@@ -269,7 +269,7 @@ def execute():
     return render_template("index.html", executemsg=executemsg)
 
 # =======================================================================
-# Input Job Info (/filter)
+# Filter data (/filter)
 
 @app.route('/filter', methods=['GET', 'POST'])
 def filter():
@@ -326,54 +326,7 @@ def filter():
         infomsg = "Failed to Submit Info"
         return render_template("index.html", infomsg=infomsg, job_data=job_data)
 
-# =======================================================================
-# Compare Forms to Filters
 
-
-@app.route("/analyze", methods=["POST"])
-def analyze():
-    # Connect to the SQLite database
-    conn = sqlite3.connect('applications.db')
-    cursor = conn.cursor()
-
-    # Extract the user's input skills
-    user_skills = [skill.strip().lower() for skill in job_data['keyWords'].split(',')]
-
-    # Execute the SQL query
-    cursor.execute('SELECT first_name, last_name, email_address, desired_salaryrate, years_of_experience, your_relevant_skills FROM ApplicationData')
-    
-    # Fetch all rows
-    rows = cursor.fetchall()
-
-    # Close the connection
-    conn.close()
-
-    # Format the data and compute the number of skill matches for each application
-    data = []
-    for row in rows:
-        # Get the list of matched skills for the current application
-        cleaned_app_skills = row[5].lower()
-        matched_skills_list = [skill for skill in user_skills if skill in cleaned_app_skills]
-        
-        # Convert the list to a comma-separated string
-        matched_skills = ', '.join(matched_skills_list)
-
-        data.append({
-            "first_name": row[0],
-            "last_name": row[1],
-            "email_address": row[2],
-            "desired_salaryrate": row[3],
-            "years_of_experience": row[4],
-            "your_relevant_skills": row[5],
-            "match_count": len(matched_skills_list),  # Use the length of matched_skills_list for the match_count
-            "matched_skills": matched_skills,
-        })
-
-    # Sort the data by match_count (highest first)
-    sorted_data = sorted(data, key=lambda x: x["match_count"], reverse=True)
-
-    # Return the sorted data as JSON
-    return jsonify(sorted_data)
   
 
 
