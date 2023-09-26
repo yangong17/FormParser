@@ -57,7 +57,31 @@ def index():
     job_data['salary'] = 0
     job_data['keyWords'] = 'none'
     
-    return render_template("index.html")
+
+    # Fetch data from the database
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT first_name, last_name, email_address, desired_salaryrate, years_of_experience, your_relevant_skills FROM ApplicationData')
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    data = []
+    for row in rows:
+        data.append({
+            "first_name": row[0],
+            "last_name": row[1],
+            "email_address": row[2],
+            "desired_salaryrate": int(row[3]),
+            "years_of_experience": row[4],
+            "your_relevant_skills": row[5],
+            "match_count": 0,
+            "matched_skills": ""
+        })
+
+    # Render the template and pass the data
+    return render_template("index.html", job_data=job_data, table_data=data)
 
 # =======================================================================
 # Upload Forms (/upload)
@@ -257,11 +281,47 @@ def filter():
         
         infomsg = "Info Successfully Submitted"
 
-        print(job_data['yearsOfExperience']) #Testing
-        print(job_data['salary']) #Testing
-        print(job_data['keyWords']) #Testing
+        # Connect to the SQLite database
+        conn = sqlite3.connect('applications.db')
+        cursor = conn.cursor()
+
+        # Extract the user's input skills
+        user_skills = [skill.strip().lower() for skill in job_data['keyWords'].split(',')]
+
+        # Execute the SQL query
+        cursor.execute('SELECT first_name, last_name, email_address, desired_salaryrate, years_of_experience, your_relevant_skills FROM ApplicationData')
+    
+        # Fetch all rows
+        rows = cursor.fetchall()
+
+        # Close the connection
+        conn.close()
+
+        # Format the data and compute the number of skill matches for each application
+        data = []
+        for row in rows:
+            # Get the list of matched skills for the current application
+            cleaned_app_skills = row[5].lower()
+            matched_skills_list = [skill for skill in user_skills if skill in cleaned_app_skills]
         
-        return render_template("index.html", infomsg=infomsg, job_data=job_data)
+            # Convert the list to a comma-separated string
+            matched_skills = ', '.join(matched_skills_list)
+
+            data.append({
+                "first_name": row[0],
+                "last_name": row[1],
+                "email_address": row[2],
+                "desired_salaryrate": int(row[3]),
+                "years_of_experience": row[4],
+                "your_relevant_skills": row[5],
+                "match_count": len(matched_skills_list),
+                "matched_skills": matched_skills,
+            })
+
+        # Sort the data by match_count (highest first)
+        sorted_data = sorted(data, key=lambda x: x["match_count"], reverse=True)
+
+        return render_template("index.html", infomsg=infomsg, table_data=sorted_data, job_data=job_data)
     else:
         infomsg = "Failed to Submit Info"
         return render_template("index.html", infomsg=infomsg, job_data=job_data)

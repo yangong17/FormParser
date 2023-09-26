@@ -129,13 +129,7 @@
         <div class="col-md-8">
             <!-- Database Section -->
             <div>
-                <!-- Your Database Table/Content Here -->
-                <form action="/analyze" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data">
-                    <h4>View Database</h4>
-                    <!-- Button to view database data -->
-                    <button id="analyzeBtn" type="button" class="btn btn-secondary mt-3">View Database</button>
-                </form>
-                
+                <!-- Your Database Table/Content Here -->                
                 <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
                 
                 <!-- Extracted data table -->
@@ -155,6 +149,18 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for row in table_data %}
+                                <tr>
+                                    <td>{{ row.first_name }}</td>
+                                    <td>{{ row.last_name }}</td>
+                                    <td>{{ row.email_address }}</td>
+                                    <td>{{ row.desired_salaryrate }}</td>
+                                    <td>{{ row.years_of_experience }}</td>
+                                    <td>{{ row.your_relevant_skills }}</td>
+                                    <td>{{ row.match_count }}</td>
+                                    <td>{{ row.matched_skills }}</td>
+                                </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
