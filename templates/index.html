@@ -12,10 +12,10 @@
 <div class="container-fluid padded">
     <div class="row">
         <!-- Left Column -->
-        <div class="col-md-3">
+        <div class="col-md-3.2 border-right pr-5">  <!-- Right border on left column, padding right 3 -->
             <!-- Upload Section -->
             
-            <div class="mb-4">
+            <div class="mb-5">
                 <!-- Your Upload Form/Content Here -->
                 <!-- Upload Forms -->
                 <form action="/upload" style="margin-top: 40px; margin-bottom: 40px;" method="post" enctype="multipart/form-data" onsubmit="return confirmUpload()">
@@ -24,7 +24,7 @@
 
                     <!-- Dropdown for Template Selection -->
                     <div class="form-group">
-                        <label for="templateSelection">Select Form Template:</label>
+                        <label for="templateSelection" style="font-weight: bold;">Select Form Template:</label>
                         <select class="form-control" id="templateSelection" name="template">
                             <option value="manufacturingTemplate1">Manufacturing Job Application 1</option>
                         </select>
@@ -78,7 +78,7 @@
                     <h4 style="margin-top: 40px; margin-bottom: 40px;">2. Analyze with Amazon Textract</h4>
                 
                     <!-- Button to run Analysis -->
-                    <button id="executeBtn">Analyze</button>
+                    <button id="executeBtn" {% if not session.get('file_uploaded') %}disabled{% endif %}>Analyze</button>
                 
                 </form>
                 
@@ -124,9 +124,9 @@
 
             </div>
         </div>
-
+        <!-- ============================================================================================================================================== -->
         <!-- Right Column -->
-        <div class="col-md-9">
+        <div class="col-md-8">
             <!-- Database Section -->
             <div>
                 <!-- Your Database Table/Content Here -->
@@ -138,7 +138,7 @@
                 
                 <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
                 
-                <!-- Placeholder for the extracted data table -->
+                <!-- Extracted data table -->
                 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
                     <h4>Extracted Data:</h4>
                     <table class="table table-bordered" id="extractedDataTable">
@@ -146,6 +146,8 @@
                             <tr>
                                 <th>First Name</th>
                                 <th>Last Name</th>
+                                <th>E-mail Address</th>
+                                <th>Desired Salary</th>
                                 <th>Years of Experience</th>
                                 <th>Relevant Skills</th>
                                 <th>Match Count</th>
@@ -197,6 +199,8 @@
                                 // Append columns to the row
                                 tr.append($("<td>").text(row.first_name));
                                 tr.append($("<td>").text(row.last_name));
+                                tr.append($("<td>").text(row.email_address));
+                                tr.append($("<td>").text(row.desired_salaryrate));   
                                 tr.append($("<td>").text(row.years_of_experience));
                                 tr.append($("<td>").text(row.your_relevant_skills));
                                 tr.append($("<td>").text(row.match_count));

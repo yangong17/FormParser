@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
+app.secret_key = 'yangong'
 app.debug = True
 
 
@@ -100,6 +101,7 @@ def upload():
                     os.remove(page_file_name)  # Delete the temp file after uploading
             
             uploadmsg = f"File Successfully Uploaded and Split into {total_pages} page(s)"
+            session['file_uploaded'] = True
             return render_template("index.html", uploadmsg=uploadmsg)
         else:
             uploadmsg = "Failed to Upload File"
@@ -112,6 +114,10 @@ def upload():
 def execute():
 
 # Config:
+
+    #Check if file had been uploaded
+    if 'file_uploaded' not in session:
+        session['file_uploaded'] = False
 
     # List of keys to extract from the document and their data type (For database)
     keys_to_extract = {
@@ -269,7 +275,7 @@ def analyze():
     user_skills = [skill.strip().lower() for skill in job_data['keyWords'].split(',')]
 
     # Execute the SQL query
-    cursor.execute('SELECT first_name, last_name, years_of_experience, your_relevant_skills FROM ApplicationData')
+    cursor.execute('SELECT first_name, last_name, email_address, desired_salaryrate, years_of_experience, your_relevant_skills FROM ApplicationData')
     
     # Fetch all rows
     rows = cursor.fetchall()
@@ -281,7 +287,7 @@ def analyze():
     data = []
     for row in rows:
         # Get the list of matched skills for the current application
-        cleaned_app_skills = row[3].lower()
+        cleaned_app_skills = row[5].lower()
         matched_skills_list = [skill for skill in user_skills if skill in cleaned_app_skills]
         
         # Convert the list to a comma-separated string
@@ -290,8 +296,10 @@ def analyze():
         data.append({
             "first_name": row[0],
             "last_name": row[1],
-            "years_of_experience": row[2],
-            "your_relevant_skills": row[3],
+            "email_address": row[2],
+            "desired_salaryrate": row[3],
+            "years_of_experience": row[4],
+            "your_relevant_skills": row[5],
             "match_count": len(matched_skills_list),  # Use the length of matched_skills_list for the match_count
             "matched_skills": matched_skills,
         })
