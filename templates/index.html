@@ -32,7 +32,7 @@
 
                     <!-- Buttons for Download and Preview -->
                     <div class="form-group">
-                        <a href="{{ url_for('static', filename='form_templates/General Job Application - Blank.pdf') }}" download class="btn btn-primary">Download Template</a>
+                        <a href="{{ url_for('static', filename='form_templates/General Job Application - Blank.pdf') }}" download class="btn btn-secondary">Download Template</a>
                         <a href="{{ url_for('static', filename='form_templates/General Job Application - Blank.pdf') }}" target="_blank" class="btn btn-secondary">Preview</a>
                     </div>
 
@@ -129,11 +129,21 @@
         <div class="col-md-8">
             <!-- Database Section -->
             <div>
-                <!-- Your Database Table/Content Here -->   
-
-                <button id="sortSalaryBtn" type="button" class="btn btn-secondary mt-3">Sort by Salary Expectation</button>
-                <button id="sortExperienceBtn" type="button" class="btn btn-secondary mt-3">Sort by Experience</button>                
-                <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
+                <!-- Database Table/Content -->   
+                <button id="sortSalaryBtn" type="button" class="btn btn-secondary mt-3">
+                    Sort by Salary Expectation
+                    <span class="sort-indicator"></span>
+                </button>
+                
+                <button id="sortExperienceBtn" type="button" class="btn btn-secondary mt-3">
+                    Sort by Experience
+                    <span class="sort-indicator"></span>
+                </button>
+                
+                <button id="sortBtn" type="button" class="btn btn-secondary mt-3">
+                    Sort by Match Count
+                    <span class="sort-indicator"></span>
+                </button>
 
                 <!-- Extracted data table -->
                 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
@@ -208,6 +218,8 @@
                                 $("#extractedDataTable tbody").empty();
                                 populateTable(sortedData);
                             }
+                            // Update visual indicator
+                            updateSortIndicator($(this).find(".sort-indicator"), sortSalaryAscending);
                         });
                        
 
@@ -215,42 +227,47 @@
                         // Click handler for Experience Sort
                         $("#sortExperienceBtn").click(function(){
                             if(currentData && currentData.length) {
-                                sortExperienceAscending = !sortExperienceAscending;  // Toggle the flag
-                                
+                                sortExperienceAscending = !sortExperienceAscending;
+            
                                 let sortedData;
                                 if (sortExperienceAscending) {
-                                    sortedData = currentData.sort((a, b) => a.years_of_experience - b.years_of_experience);  // Sort ascending
+                                    sortedData = currentData.sort((a, b) => a.years_of_experience - b.years_of_experience);
                                 } else {
-                                    sortedData = currentData.sort((a, b) => b.years_of_experience - a.years_of_experience);  // Sort descending
+                                    sortedData = currentData.sort((a, b) => b.years_of_experience - a.years_of_experience);
                                 }
-
-                                // Clear the existing rows in the table and populate with sorted data
                                 $("#extractedDataTable tbody").empty();
                                 populateTable(sortedData);
                             }
+                            // Update visual indicator
+                            updateSortIndicator($(this).find(".sort-indicator"), sortExperienceAscending);
                         });
 
                         // Click handler for the Match Sort
                         $("#sortBtn").click(function(){
                             if(currentData && currentData.length) {
-                                sortMatchCountAscending = !sortMatchCountAscending;  // Toggle the flag
+                                sortMatchCountAscending = !sortMatchCountAscending;
                                 
                                 let sortedData;
                                 if (sortMatchCountAscending) {
-                                    sortedData = currentData.sort((a, b) => a.match_count - b.match_count);  // Sort ascending
+                                    sortedData = currentData.sort((a, b) => a.match_count - b.match_count);
                                 } else {
-                                    sortedData = currentData.sort((a, b) => b.match_count - a.match_count);  // Sort descending
+                                    sortedData = currentData.sort((a, b) => b.match_count - a.match_count);
                                 }
-
-                                // Clear the existing rows in the table and populate with sorted data
                                 $("#extractedDataTable tbody").empty();
                                 populateTable(sortedData);
                             }
+                            updateSortIndicator($(this).find(".sort-indicator"), sortMatchCountAscending);
                         });
 
+                        // Helper function to update visual indicators
+                        function updateSortIndicator(element, isAscending) {
+                            if (isAscending) {
+                                element.removeClass("desc").addClass("asc");
+                            } else {
+                                element.removeClass("asc").addClass("desc");
+                            }
+                        }
 
-
-                
                         // Extracted table populating code into a separate function for reusability
                         function populateTable(data) {
                             // Loop through each row of data
