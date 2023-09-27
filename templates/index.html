@@ -99,17 +99,17 @@
 
                     <div>
                         <label for="yearsOfExperience">Years of Experience:</label>
-                        <input type="number" id="yearsOfExperience" name="yearsOfExperience" placeholder="e.g: 5" required>
+                        <input type="number" id="yearsOfExperience" name="yearsOfExperience" placeholder="e.g: 5" value="{{ request.form['yearsOfExperience'] or '' }}" required>
                     </div>
 
                     <div>
                         <label for="salary">Annual Compensation:</label>
-                        <input type="number" id="salary" name="salary" placeholder="e.g: 65000" required>
+                        <input type="number" id="salary" name="salary" placeholder="e.g: 65000" value="{{ request.form['salary'] or '' }}" required>
                     </div>
 
                     <div>
                         <label for="keyWords">Key Duties/Skills (Comma-separated):</label><br>
-                        <textarea id="keyWords" name="keyWords" rows="4" cols="50" placeholder="e.g: MIG welding, torch cutting, maintenance" required></textarea>
+                        <textarea id="keyWords" name="keyWords" rows="4" cols="50" required>{{ request.form['keyWords'] or '' }}</textarea>
                     </div>
 
                     <div>
@@ -129,8 +129,10 @@
         <div class="col-md-8">
             <!-- Database Section -->
             <div>
-                <!-- Your Database Table/Content Here -->                
+                <!-- Your Database Table/Content Here -->   
+
                 <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
+                <button id="sortExperienceBtn" type="button" class="btn btn-secondary mt-3">Sort by Experience</button>
                 
                 <!-- Extracted data table -->
                 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
@@ -141,7 +143,7 @@
                                 <th>First Name</th>
                                 <th>Last Name</th>
                                 <th>E-mail Address</th>
-                                <th>Desired Salary</th>
+                                <th>Salary Expectation</th>
                                 <th>Years of Experience</th>
                                 <th>Relevant Skills</th>
                                 <th>Match Count</th>
@@ -167,22 +169,24 @@
                 <script>
                     $(document).ready(function(){
                         let currentData = [];  // Store the retrieved data for sorting
-                
-                        $("#analyzeBtn").click(function(event){
-                            // ... (Your existing code)
-                
-                            // Send a POST request to /analyze
-                            $.post("/analyze", function(data){
-                                currentData = data;  // Store the data
-                
-                                // Clear the existing rows in the table
-                                $("#extractedDataTable tbody").empty();
-                
-                                populateTable(currentData);  // Use a function to populate the table
-                            });
-                        });
-                
-                        // CHANGES MADE HERE: Added a click handler for the sort button
+                        
+                        // Populate currentData from the table on page load
+                        $("#extractedDataTable tbody tr").each(function() {
+                            let row = $(this);
+                            let rowData = {
+                                "first_name": row.find("td:nth-child(1)").text(),
+                                "last_name": row.find("td:nth-child(2)").text(),
+                                "email_address": row.find("td:nth-child(3)").text(),
+                                "desired_salaryrate": parseInt(row.find("td:nth-child(4)").text(), 10),
+                                "years_of_experience": parseInt(row.find("td:nth-child(5)").text(), 10),
+                                "your_relevant_skills": row.find("td:nth-child(6)").text(),
+                                "match_count": parseInt(row.find("td:nth-child(7)").text(), 10),
+                                "matched_skills": row.find("td:nth-child(8)").text()
+                            };
+                            currentData.push(rowData);
+                        });          
+
+                        // Click handler for the Match Sort
                         $("#sortBtn").click(function(){
                             if(currentData && currentData.length) {
                                 // Sort the data by match_count (highest first)
@@ -194,8 +198,18 @@
                                 populateTable(sortedData);  // Use the same function to populate the table with sorted data
                             }
                         });
+
+                        // Click handler for Experience Sort
+                        $("#sortExperienceBtn").click(function(){
+                            if(currentData && currentData.length) {
+                                let sortedData = currentData.sort((a, b) => b.years_of_experience - a.years_of_experience);
+                                $("#extractedDataTable tbody").empty();
+                                populateTable(sortedData);
+                            }
+                        });
+
                 
-                        // CHANGES MADE HERE: Extracted table populating code into a separate function for reusability
+                        // Extracted table populating code into a separate function for reusability
                         function populateTable(data) {
                             // Loop through each row of data
                             $.each(data, function(index, row){
