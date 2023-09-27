@@ -131,9 +131,10 @@
             <div>
                 <!-- Your Database Table/Content Here -->   
 
+                <button id="sortSalaryBtn" type="button" class="btn btn-secondary mt-3">Sort by Salary Expectation</button>
+                <button id="sortExperienceBtn" type="button" class="btn btn-secondary mt-3">Sort by Experience</button>                
                 <button id="sortBtn" type="button" class="btn btn-secondary mt-3">Sort by Match Count</button>
-                <button id="sortExperienceBtn" type="button" class="btn btn-secondary mt-3">Sort by Experience</button>
-                
+
                 <!-- Extracted data table -->
                 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
                     <h4 style="margin-bottom: 15px;">Applicant Database: {{ table_data|length }} Profile(s)</h4>
@@ -167,6 +168,11 @@
                     </table>
                 </div>
                 <script>
+                   
+                   let sortSalaryAscending = true;
+                   let sortExperienceAscending = true;
+                   let sortMatchCountAscending = true;
+
                     $(document).ready(function(){
                         let currentData = [];  // Store the retrieved data for sorting
                         
@@ -186,27 +192,63 @@
                             currentData.push(rowData);
                         });          
 
-                        // Click handler for the Match Sort
-                        $("#sortBtn").click(function(){
+                        // Click handler for Salary Sort
+                        $("#sortSalaryBtn").click(function(){
                             if(currentData && currentData.length) {
-                                // Sort the data by match_count (highest first)
-                                let sortedData = currentData.sort((a, b) => b.match_count - a.match_count);
-                
-                                // Clear the existing rows in the table
-                                $("#extractedDataTable tbody").empty();
-                
-                                populateTable(sortedData);  // Use the same function to populate the table with sorted data
-                            }
-                        });
+                                sortSalaryAscending = !sortSalaryAscending;  // Toggle the flag
+                                
+                                let sortedData;
+                                if (sortSalaryAscending) {
+                                    sortedData = currentData.sort((a, b) => a.desired_salaryrate - b.desired_salaryrate);  // Sort ascending
+                                } else {
+                                    sortedData = currentData.sort((a, b) => b.desired_salaryrate - a.desired_salaryrate);  // Sort descending
+                                }
 
-                        // Click handler for Experience Sort
-                        $("#sortExperienceBtn").click(function(){
-                            if(currentData && currentData.length) {
-                                let sortedData = currentData.sort((a, b) => b.years_of_experience - a.years_of_experience);
+                                // Clear the existing rows in the table and populate with sorted data
                                 $("#extractedDataTable tbody").empty();
                                 populateTable(sortedData);
                             }
                         });
+                       
+
+
+                        // Click handler for Experience Sort
+                        $("#sortExperienceBtn").click(function(){
+                            if(currentData && currentData.length) {
+                                sortExperienceAscending = !sortExperienceAscending;  // Toggle the flag
+                                
+                                let sortedData;
+                                if (sortExperienceAscending) {
+                                    sortedData = currentData.sort((a, b) => a.years_of_experience - b.years_of_experience);  // Sort ascending
+                                } else {
+                                    sortedData = currentData.sort((a, b) => b.years_of_experience - a.years_of_experience);  // Sort descending
+                                }
+
+                                // Clear the existing rows in the table and populate with sorted data
+                                $("#extractedDataTable tbody").empty();
+                                populateTable(sortedData);
+                            }
+                        });
+
+                        // Click handler for the Match Sort
+                        $("#sortBtn").click(function(){
+                            if(currentData && currentData.length) {
+                                sortMatchCountAscending = !sortMatchCountAscending;  // Toggle the flag
+                                
+                                let sortedData;
+                                if (sortMatchCountAscending) {
+                                    sortedData = currentData.sort((a, b) => a.match_count - b.match_count);  // Sort ascending
+                                } else {
+                                    sortedData = currentData.sort((a, b) => b.match_count - a.match_count);  // Sort descending
+                                }
+
+                                // Clear the existing rows in the table and populate with sorted data
+                                $("#extractedDataTable tbody").empty();
+                                populateTable(sortedData);
+                            }
+                        });
+
+
 
                 
                         // Extracted table populating code into a separate function for reusability
