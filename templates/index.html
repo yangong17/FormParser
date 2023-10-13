@@ -148,6 +148,7 @@
                 <!-- Extracted data table -->
                 <div id="dataTableContainer" style="margin-top: 40px; margin-bottom: 40px;">
                     <h4 style="margin-bottom: 15px;">Applicant Database: {{ table_data|length }} Profile(s)</h4>
+                    <p>Filtered Applicants: {{ filtered_count }}</p>
                     <table class="table table-bordered" id="extractedDataTable">
                         <thead>
                             <tr>
@@ -163,6 +164,7 @@
                         </thead>
                         <tbody>
                             {% for row in table_data %}
+                            {% if ('yearsOfExperience' not in request.form or row.years_of_experience >= request.form['yearsOfExperience']|int) and ('salary' not in request.form or row.desired_salaryrate <= request.form['salary']|int) %}
                                 <tr>
                                     <td>{{ row.first_name }}</td>
                                     <td>{{ row.last_name }}</td>
@@ -173,7 +175,8 @@
                                     <td>{{ row.match_count }}</td>
                                     <td>{{ row.matched_skills }}</td>
                                 </tr>
-                            {% endfor %}
+                            {% endif %}
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>

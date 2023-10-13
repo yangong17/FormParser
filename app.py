@@ -297,6 +297,8 @@ def filter():
         # Close the connection
         conn.close()
 
+        total_applicants = len(rows)  # Count the total number of applicants before filtering
+
         # Format the data and compute the number of skill matches for each application
         data = []
         for row in rows:
@@ -318,10 +320,12 @@ def filter():
                 "matched_skills": matched_skills,
             })
 
+        filtered_count = total_applicants - len(data)  # Calculate the number of filtered applicants
+
         # Sort the data by match_count (highest first)
         sorted_data = sorted(data, key=lambda x: x["match_count"], reverse=True)
 
-        return render_template("index.html", infomsg=infomsg, table_data=sorted_data, job_data=job_data)
+        return render_template("index.html", infomsg=infomsg, table_data=sorted_data, job_data=job_data, filtered_count=filtered_count)
     else:
         infomsg = "Failed to Submit Info"
         return render_template("index.html", infomsg=infomsg, job_data=job_data)
