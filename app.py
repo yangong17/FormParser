@@ -4,7 +4,7 @@ import boto3
 from PyPDF2 import PdfReader, PdfWriter
 import tempfile
 from datetime import datetime
-from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify, get_flashed_messages
 from flask_session import Session
 from trp import Document
 from helpers import clean_text
@@ -80,8 +80,14 @@ def index():
             "matched_skills": ""
         })
 
+
+    flash_message = None
+    flashed_messages = get_flashed_messages()
+    if flashed_messages:
+        flash_message = flashed_messages[0] 
+
     # Render the template and pass the data
-    return render_template("index.html", job_data=job_data, table_data=data)
+    return render_template("index.html", job_data=job_data, table_data=data, flash_message=flash_message)
 
 # =======================================================================
 # Upload Forms (/upload)
@@ -266,7 +272,8 @@ def execute():
     conn.close()
     
     executemsg = f"{total_pages_processed} page(s) analyzed and imported into applications.db" 
-    return render_template("index.html", executemsg=executemsg)
+    flash(executemsg)
+    return redirect(url_for('index'))
 
 # =======================================================================
 # Filter data (/filter)
