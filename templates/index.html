@@ -6,12 +6,6 @@
 
 <h2>Form Parser v1.0</h2>
 
-{% if flash_message %}
-    <div class="alert alert-info">
-        {{ flash_message }}
-    </div>
-{% endif %}
-
 <hr>  
 <!-- ============================================================================================================================================== -->
 
@@ -92,7 +86,16 @@
                 {% if executemsg %}
                 <p class="alert alert-success mt-3">{{ executemsg }}</p>
                 {% endif %}
+
+                {% if flash_message %}
+                <div class="alert alert-info">
+                    {{ flash_message }}
+                </div>
+                {% endif %}
+
             </div>
+
+
 
             <hr>
             <!-- ============================================================================================================================================== -->
@@ -312,13 +315,6 @@
             </div>
         </div>
     </div>
-</div>
-
-
-
-<!-- Download File Button -->
-<div class="mt-3">
-    <a href="/download/filename_here" class="btn btn-success">Download Processed File</a>
 </div>
 
 
