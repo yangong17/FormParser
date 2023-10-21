@@ -1,15 +1,18 @@
 import os
 import sqlite3
 import boto3
+import csv
+from io import StringIO
 from PyPDF2 import PdfReader, PdfWriter
 import tempfile
 from datetime import datetime
-from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify, get_flashed_messages
+from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, url_for, jsonify, get_flashed_messages, make_response
 from flask_session import Session
 from trp import Document
 from helpers import clean_text
-from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+
+
 
 
 app = Flask(__name__)
@@ -336,8 +339,40 @@ def filter():
     else:
         infomsg = "Failed to Submit Info"
         return render_template("index.html", infomsg=infomsg, job_data=job_data)
+    
+    
+# =======================================================================
+# Export data (/export)
 
+@app.route("/export", methods=["GET"])
+def export_csv():
+    # Connect to the database
+    conn = sqlite3.connect('applications.db')
+    cursor = conn.cursor()
 
+    # Fetch all column names
+    cursor.execute("PRAGMA table_info(ApplicationData)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    # Fetch all data from the table
+    cursor.execute('SELECT * FROM ApplicationData')
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    # Prepare CSV data
+    si = StringIO()
+    cw = csv.writer(si)
+    # Write headers
+    cw.writerow(columns)
+    # Write database rows to CSV
+    cw.writerows(rows)
+
+    # Create response
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=applications.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
   
 
 
