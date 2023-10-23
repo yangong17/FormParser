@@ -8,10 +8,11 @@
 
 * It was developed using Python, HTML, with snippets of JavaScript and SQL.
 
-* In this version, it was specifically designed to process job applications to solve the challenge of manually sifting through large volumes of job applications to find the best match
+* Currently, its main function is the ability to identify key-value pairs in job applications, and the capability to analyze and export this data into a csv file. For companies without an Applicant Tracking System (ATS), this greatly speeds up the otherwise tedious task of manually processing a stack of applications to find the best fit.
 
-* The code can be easily tweaked to handle a variety of forms and PDFs with key-value pairs.
+* The code can be further tweaked to handle a variety of forms and PDFs with key-value pairs.
 
+&nbsp;
 
 ---
 
@@ -19,6 +20,7 @@
 
 * My inspiration for this project stemmed from the desire to simplify and expedite time-consuming tasks inherent in HR operations
 
+&nbsp;
 
 ---
 
@@ -35,6 +37,7 @@ Automated extraction and processing of data from documents can be immensely valu
 
 * **Banking:** Extracting account numbers, transaction dates, and amounts from bank statements to automate the reconciliation process.
 
+&nbsp;
 
 ---
 
@@ -43,22 +46,59 @@ Automated extraction and processing of data from documents can be immensely valu
 
 #### **Upload**
 
-* Splits the selected PDF into individual pages, and uploads these pages into an assigned Amazon S3 bucket
+* Splits the selected PDF into individual pages, and uploads these pages into an Amazon S3 bucket
 
 
 
 #### **Analyze**
 * Runs a for-loop for each file in the S3 bucket, calling Amazon Textract to:
-    * Analyze the document
-    * Extract key-value pairs from each page
-    * Insert extracted data into the database
-
+    * Read the document
+    * Extract the assigned key-value pairs from each page (Can be tweaked in app.py to extract different key-value pairs)
+    * Insert extracted data into a database in the working directory (applications.db)
 
 
 #### **Filter**
 * Compares the user-inputted filter parameters against the value in the database
 * Other auxiliary functions such as calculating the total number of applicants, and sorting the data based on the number of skill matches
 
+&nbsp;
 
+---
 
+### Requirements:
+
+* Because this app utilizes the Amazon Textract API, an Amazon Web Services (AWS) account is required. [Link to AWS](aws.amazon.com)
+
+* This app requires you to create an AWS account and obtain an AWS access key and AWS secret access key. The app is designed to pull your access keys from your environment variables, as represented with the code on line 34:
+
+```
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY') 
+```
+
+You can store your access keys in environment variables by doing the following:
+
+&nbsp;
+
+**1. For Windows:**
+
+* Open the start menu, type Environment Variables, then choose "Edit the system environment variables."
+* In the System Properties window, click the “Environment Variables” button.
+* Under the "User variables" section, click the "New" button.
+* For "Variable name", enter AWS_ACCESS_KEY_ID and for "Variable value", enter your actual AWS Access Key ID.
+* Click OK.
+* Repeat the process to add another user variable with the name AWS_SECRET_ACCESS_KEY and your actual AWS Secret Access Key as the value.
+* Click OK again to apply the changes.
+
+&nbsp;
+
+**2. For macOS and Linux:**
+
+* Open your terminal.
+* Use the export command to set each variable. For example:
+
+```
+export AWS_ACCESS_KEY_ID=your_actual_access_key_id
+export AWS_SECRET_ACCESS_KEY=your_actual_secret_access_key
+```
 
