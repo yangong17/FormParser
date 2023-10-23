@@ -8,9 +8,9 @@
 
 * It was developed using Python, HTML, with snippets of JavaScript and SQL.
 
-* Currently, its main function is the ability to identify key-value pairs in job applications, and the capability to analyze and export this data into a csv file. For companies without an Applicant Tracking System (ATS), this greatly speeds up the otherwise tedious task of manually processing a stack of applications to find the best fit.
+* Currently, its main function is the ability to identify key-value pairs in job applications (e.g., "first_name:yang"), analyze the content (like specific job skills) and export this data into a csv file. For companies without an Applicant Tracking System (ATS), this greatly streamlines the otherwise laborious process of manually reviewing job applications
 
-* The code can be further tweaked to handle a variety of forms and PDFs with key-value pairs.
+* The source code can be further tweaked to handle a variety of forms and PDFs with key-value pairs.
 
 &nbsp;
 
