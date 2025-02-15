@@ -4,11 +4,11 @@
 
 #### **Description:**
 
-* Form Parser is a Flask-based web application that is able to extract and analyze data from pdfs using computer vision (specifically the Amazon Textract API).
+* Form Parser is a Flask-based web application that is able to extract and analyze data from handwritten documents using computer vision (specifically the Amazon Textract API).
 
 * It was developed using Python, HTML, with snippets of JavaScript and SQL.
 
-* Currently, its main function is the ability to identify key-value pairs in job applications (e.g., "first_name:yang"), analyze the content (like specific job skills) and export this data into a csv file. For companies without an Applicant Tracking System (ATS), this greatly streamlines the otherwise laborious process of manually reviewing job applications
+* The current version is modified to process handwritten job applications, a common document for companies that hire many blue-collar workers.
 
 * The source code can be further tweaked to handle a variety of forms and PDFs with key-value pairs.
 
@@ -18,7 +18,8 @@
 
 #### **Inspiration:**
 
-* My inspiration for this project stemmed from the desire to simplify and expedite time-consuming tasks inherent in HR operations
+* My inspiration for this project stemmed from the desire to simplify and expedite time-consuming data-entry tasks inherent in many business operations.
+
 
 &nbsp;
 
